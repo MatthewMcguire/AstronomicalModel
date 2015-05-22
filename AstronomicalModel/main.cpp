@@ -6,6 +6,7 @@
 //  Copyright (c) 2015 Matthew McGuire. All rights reserved.
 //
 
+#include "main.h"
 #include <iostream>
 
 int main(int argc, const char * argv[]) {

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		34C3B1671B124D9B00245D52 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 34C3B1661B124D9B00245D52 /* README.md */; };
 		34FC1F361B0FAF2B00AD6E0E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34FC1F351B0FAF2B00AD6E0E /* main.cpp */; };
 		34FC1F3D1B0FAF7100AD6E0E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34FC1F3C1B0FAF7100AD6E0E /* OpenGL.framework */; };
 		34FC1F3F1B0FAF7A00AD6E0E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34FC1F3E1B0FAF7A00AD6E0E /* Cocoa.framework */; };
@@ -30,6 +31,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		34C3B1661B124D9B00245D52 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		34FC1F321B0FAF2B00AD6E0E /* AstronomicalModel */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = AstronomicalModel; sourceTree = BUILT_PRODUCTS_DIR; };
 		34FC1F351B0FAF2B00AD6E0E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		34FC1F3C1B0FAF7100AD6E0E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
@@ -92,6 +94,7 @@
 				34FC1F491B0FB95B00AD6E0E /* screenshots */,
 				34FC1F351B0FAF2B00AD6E0E /* main.cpp */,
 				34FC1F481B0FB93200AD6E0E /* main.h */,
+				34C3B1661B124D9B00245D52 /* README.md */,
 			);
 			path = AstronomicalModel;
 			sourceTree = "<group>";
@@ -177,6 +180,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34C3B1671B124D9B00245D52 /* README.md in Sources */,
 				34FC1F501B0FC08400AD6E0E /* lib3D.cpp in Sources */,
 				34FC1F361B0FAF2B00AD6E0E /* main.cpp in Sources */,
 			);

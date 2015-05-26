@@ -15,20 +15,20 @@
 
 
 // Sphere and Solar system objects are initialized
-BetterSphere modelSphere(10,10,1.0);
+
 AstroGroup solarSystem;
 
 //**************************************************
 /*@@##====--- OpenGL parameters (BEGIN) ---====##@@*/
-const int numVAO = 5;
-const int numBuffers = 14;
-const int numUBuffs = 4;
+const int numVAO = 3;
+const int numBuffers = 3;
+const int numUBuffs = 3;
 GLuint VertexArrayID[numVAO];       //  Array of Vertex Array Objects
 GLuint program[1];                  //  max. number of shader programs
 GLuint shaderBuffer[numBuffers];    //  Array of ordinary shader buffers
-GLuint attribLocation[8];           //  Array of shader attribute locations
-GLint uniformLocation[9];           //  Array of uniform variable locations
-GLuint textureName[2];
+GLuint attribLocation[3];           //  Array of shader attribute locations
+GLint uniformLocation[3];           //  Array of uniform variable locations
+GLuint textureName[3];
 GLuint uBlockIndex[numUBuffs];      //  Array of Uniform buffer block names
 GLint uBlockSize[numUBuffs];        //  Sizes of Uniform buffer blocks
 GLuint uBlockBinding​[numUBuffs];
@@ -46,6 +46,7 @@ GLfloat halfWinHeight = mainWinHeight/2.0;
 char windowName[50];
 GLuint shaderProg;
 GLFWwindow* mainWin;
+GLdouble xCursorPos, yCursorPos;
 GLdouble fps[2], nowFPS;
 GLuint fpsCounter = 0;
 /*@@##====--- GLFW parameters (END) ---====##@@*/
@@ -58,6 +59,7 @@ enum {ModelvMatrix,ProjMatrix,numCameraBlockVars};
 GLubyte * modelMatrixAddr;
 GLubyte * projMatrixAddr;
 size_t uVarMemorySize[numCameraBlockVars];
+matr4 objTransforms[20];
 
 // the camera begins out on the positive z-axis, looking at the origin
 GLfloat camEyeθ = M_PI;         // θ is measured around the x-z plane, begins at pi
@@ -101,6 +103,23 @@ void togglePolyMode(void)
         polygonModeToggle = LINE;
         break;
     }
+}
+void moveCamera(void)
+{
+    // get current mouse cursor
+    // normalize to [-1,1]
+    glfwGetCursorPos(mainWin, &xCursorPos, &yCursorPos);
+    GLdouble displacedHorizontal = (xCursorPos-halfWinWidth)/halfWinWidth;
+    GLdouble displacedVertical = (yCursorPos-halfWinHeight)/halfWinHeight;
+    
+    // compute acceleration
+    // modify polar angles
+    camEyeθ += fabs(accelFactor*pow(displacedHorizontal,2.0))* sgn(displacedHorizontal);
+    camEyeφ += fabs(accelFactor*pow(displacedVertical,2.0))* sgn(displacedVertical);
+    camEyeθ = smallPiBound(camEyeθ);
+    camEyeφ = smallPiBound(camEyeφ);
+    camRight = {cos(camEyeθ),0,-sin(camEyeθ)};
+    camUp = glm::cross(camEye,camRight);
 }
 /*@@##====--- General helper functions (END) ---====##@@*/
 
@@ -181,11 +200,15 @@ void windowReshape(GLFWwindow* window, int width, int height)
 }
 void screenCursor(GLFWwindow* mainWin, double xpos, double ypos)
 {
-
+    // nothing to do here. I only poll the x and y pos when needed
+    // but un-comment these should it be necessary:
+    // xCursorPos = xpos;
+    // yCursorPos = ypos;
 }
 void mouseFunc(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS);
+//    if (button == GLFW_MOUSE_BUTTON_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT))
+//        moveCamera();
 }
 void scrollFunc(GLFWwindow* mainWin, double xOffset, double yOffset)
 {
@@ -194,25 +217,13 @@ void scrollFunc(GLFWwindow* mainWin, double xOffset, double yOffset)
 }
 /*@@##====--- GLFW Callback functions (END) ---====##@@*/
 
-void moveCamera(void)
-{
-//    // get current mouse cursor
-//    // normalize to [-1,1]
-//    GLfloat displacedHorizontal = (currentCursor[0]-halfWinWidth)/halfWinWidth;
-//    GLfloat displacedVertical = (currentCursor[1]-halfWinHeight)/halfWinHeight;
-//
-//    // compute acceleration
-//    // modify polar angles
-//    camEyeθ += fabs(accelFactor*pow(displacedHorizontal,2.0))* sgn(displacedHorizontal);
-//    camEyeφ += fabs(accelFactor*pow(displacedVertical,2.0))* sgn(displacedVertical);
-//    camEyeθ = smallPiBound(camEyeθ);
-//    camEyeφ = smallPiBound(camEyeφ);
-//    camRight = {cos(camEyeθ),0,-sin(camEyeθ)};
-//    camUp = glm::cross(camEye,camRight);
-}
+
 
 void initGLFW()
 {
+    assert (restart_gl_log ());             // simple log of graphics startup data
+    gl_log (" starting GLFW\n% s\n", glfwGetVersionString ());
+
     glfwSetErrorCallback(errorCallb);
     if (!glfwInit()) {
         std::cout << "GLFW failed to initialize!\n";
@@ -231,7 +242,7 @@ void initGLFW()
         exit(1);
     }
     glfwMakeContextCurrent(mainWin);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);      // set transparency mode
     //    /* With Retina on Mac OS X, GLFW's FramebufferSize dne WindowSize */
     //    glfwGetFramebufferSize(wind, &fbwidth, &fbheight);
     //
@@ -241,298 +252,95 @@ void initGLFW()
     //    /* function to handle window resizes */
     //    glfwSetFramebufferSizeCallback(wind, fbreshape);
     glfwSetWindowSizeCallback(mainWin, windowReshape);
-    glfwSetWindowCloseCallback(mainWin,quitApp);  // for window close
+    glfwSetWindowCloseCallback(mainWin,quitApp);
     glfwSetKeyCallback(mainWin, specialKeyTyping);
     glfwSetCharCallback(mainWin, asciiTyping);
     glfwSetCursorPosCallback(mainWin, screenCursor);
     glfwSetScrollCallback(mainWin, scrollFunc);
     glfwSetMouseButtonCallback(mainWin, mouseFunc);
-    glfwSwapInterval(0);    // allows more than 60 FPS
+    glfwSwapInterval(0);    // allows more than 60 FPS (though screen tearing is a risk)
+    log_gl_params();
 }
 void initOpenGL()
 {
     glEnable(GL_DEPTH_TEST);
     program[0] = prepareShaders("AstronObjectGLSL.vert", "AstronObjectGLSL.frag");
 
-    /*--- (BEGIN) Create VAO and buffer stuff  ---*/
+    /*--- Create VAO and buffer stuff  ---*/
     glGenBuffers(numBuffers,shaderBuffer);
     glGenVertexArrays(numVAO,VertexArrayID);
-    /*--- (END) Create VAO and buffer stuff  ---*/
-//
-//    /*--- (BEGIN) Sphere Preparation  ---*/
-//    // program 0 has shaders that do perspective and lighting model
-//    // program 0 will use VAO 0
-//    glUseProgram(program[0]);
-//    // Sphere Indices and Vertices
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (sizeof(calcio.indices[0]) * calcio.numIndices),&calcio.indices.front(),GL_STATIC_DRAW);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
-//    glBufferData(GL_ARRAY_BUFFER, ((sizeof(calcio.vertices[0])+sizeof(calcio.norms[0])) * calcio.numVertices),NULL,GL_STATIC_DRAW);
-//    glBufferSubData(GL_ARRAY_BUFFER, 0, (sizeof(calcio.vertices[0]) * calcio.numVertices), &calcio.vertices.front());
-//    glBufferSubData(GL_ARRAY_BUFFER, (sizeof(calcio.vertices[0]) * calcio.numVertices), (sizeof(calcio.norms[0]) * calcio.numVertices), &calcio.norms.front());
-//
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[6]);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(calcio.stMap[0])*calcio.numVertices,&calcio.stMap.front(), GL_STATIC_DRAW);
-//
-//    // Vertex Array Object 0 is for the Sphere
-//    glBindVertexArray(VertexArrayID[0]);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
-//    attribLocation[0] = glGetAttribLocation(program[0], "vPosition");
-//    glVertexAttribPointer(attribLocation[0],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-//
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[6]);
-//    attribLocation[4] = glGetAttribLocation(program[0], "stMap");
-//    glVertexAttribPointer(attribLocation[4],2,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-//    glBindVertexArray(0);
-//    /*--- (END) Sphere Preparation  ---*/
-//
-//    /*--- (BEGIN) Panel Preparation  ---*/
-//    // program 1 has shaders that draw a textured panel without perspective
-//    // program 1 will use VAO 1
-//    glUseProgram(program[1]);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[2]);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Histo.bgIndices[0])*Histo.numBgIndices,&Histo.bgIndices.front(),GL_STATIC_DRAW);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[3]);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(Histo.bgVertices[0])*Histo.numBgVertices,&Histo.bgVertices.front(),GL_STATIC_DRAW);
-//
-//    // Vertex Array Object 1 is for the Panel
-//    glBindVertexArray(VertexArrayID[1]);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[2]);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[3]);
-//    attribLocation[1] = glGetAttribLocation(program[1], "vPosition");
-//    glVertexAttribPointer(attribLocation[1],2,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-//
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[5]);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(Histo.stMap[0])*Histo.numBgVertices,&Histo.stMap.front(), GL_STATIC_DRAW);
-//    attribLocation[3] = glGetAttribLocation(program[1], "stMap");
-//    glVertexAttribPointer(attribLocation[3],2,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-//    glBindVertexArray(0);
-//    /*--- (END) Panel Preparation  ---*/
-//
-//    /*--- (BEGIN) Slider Preparation  ---*/
-//    // program 2 has shaders that draw panel sliders without perspective
-//    // program 2 will use VAO 2
-//    glUseProgram(program[2]);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[7]);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Histo.sliderIndices[0])*Histo.numSliderIndices,&Histo.sliderIndices.front(),GL_STATIC_DRAW);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[8]);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(Histo.sliderVertices[0])*Histo.numSliderVertices,&Histo.sliderVertices.front(),GL_STATIC_DRAW);
-//
-//    // Vertex Array Object 2 is for the Sliders
-//    glBindVertexArray(VertexArrayID[2]);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[7]);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[8]);
-//    attribLocation[2] = glGetAttribLocation(program[2], "vPosition");
-//    glVertexAttribPointer(attribLocation[2],2,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-//
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[11]);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(Histo.stMapSlider[0])*Histo.numSliderVertices,&Histo.stMapSlider.front(), GL_STATIC_DRAW);
-//    attribLocation[6] = glGetAttribLocation(program[2], "stMapSlider");
-//    glVertexAttribPointer(attribLocation[6],2,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-//    uniformLocation[3] = glGetUniformLocation(program[2], "whichSlider");
-//    uniformLocation[4] = glGetUniformLocation(program[2], "sliderOffsetsHorizontal");
-//    glUniform2f(uniformLocation[4], sliderOffset[0],sliderOffset[1]);
-//    glBindVertexArray(0);
-//    /*--- (END) Slider Preparation  ---*/
-//
-//    /*==-- (BEGIN) Histogram preparation        --==*/
-//    // program 3 has shaders that draw the histogram without perspective
-//    // program 3 will use VAO 3
-//    glUseProgram(program[3]);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[9]);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Histo.histoIndices[0])*Histo.numHistoIndices,&Histo.histoIndices.front(),GL_STATIC_DRAW);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[10]);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(Histo.histoVertices[0])*Histo.numHistoVertices,&Histo.histoVertices.front(),GL_STATIC_DRAW);
-//
-//    // Vertex Array Object 2 is for the Histogram
-//    glBindVertexArray(VertexArrayID[3]);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[9]);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[10]);
-//    attribLocation[5] = glGetAttribLocation(program[3], "vPosition");
-//    glVertexAttribPointer(attribLocation[5],2,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-//    uniformLocation[5] = glGetUniformLocation(program[3], "whichElement");
-//    glBindVertexArray(0);
-//    /*==-- (END) Histogram preparation        --==*/
-//
-//    /*--- (BEGIN) Highlights preparation  ---*/
-//    glUseProgram(program[4]);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[12]);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(countryContrib.indices[0])*countryContrib.numIndices,&countryContrib.indices.front(),GL_STATIC_DRAW);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[13]);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(countryContrib.vertices[0])*countryContrib.numVertices,&countryContrib.vertices.front(),GL_STATIC_DRAW);
-//
-//    // Vertex Array Object 4 is for the Highlights
-//    glBindVertexArray(VertexArrayID[4]);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[12]);
-//    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[13]);
-//    attribLocation[7] = glGetAttribLocation(program[4], "vPosition");
-//    glVertexAttribPointer(attribLocation[7],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-//    glBindVertexArray(0);
-//
-//    // connect Highlight spec matrices
-//    uniformLocation[8] = glGetUniformLocation(program[4], "lightSpec");
-//    uniformLocation[7] = glGetUniformLocation(program[4], "blobSpec");
-//
-//    startv = glm::normalize(vec3(0.0,0.0,1.0));
-//
-//    // my goodness, I really need to replace this sequence with a simple function and array
-//    vec3 endv = glm::normalize(vec3(-.2,1.3 ,-1.24));
-//    glm::mat4 rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[0] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.16,1.85 ,-1.51));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[1] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.47,1.79 ,-1.52));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[2] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(.01,1.04 ,-1.17));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[3] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.22,1.93 ,-1.34));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[4] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.13,1.88 ,-1.44));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[5] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(.02, 1.45,-1.12));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[6] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.48,2.12 ,-0.95));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[7] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.02, 1.3,-1.12));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[8] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.07,1.23 ,-1.18));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[9] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.25,1.86 ,-1.44));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[10] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.59,1.25 ,-1.26));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[11] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.44,1.49 ,-1.37));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[12] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(0.17,1.50 ,-1.12));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[13] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.3,1.13 ,-1.24));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[14] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.13,1.88 ,-1.44));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[15] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-0.17,2.22 ,-1.24));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[16] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.51,2.07 ,-1.52));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[17] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(0.17,0.98 ,-1.12));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[18] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.88,2.14 ,-1.22));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[19] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(.08, 1.95,-1.22));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[20] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(0.08,0.96,-1.15));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[21] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.33,2.11 ,-1.24));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[22] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    endv = glm::normalize(vec3(-.17,1.24 ,-1.17));
-//    rotateFirst = glm::mat4_cast(RotationBetweenVectors(startv, endv));
-//    blobSpec[23] = glm::translate(glm::mat4(1.0),endv)*rotateFirst;
-//
-//    countryContrib.updateHighlightColors(works.getAllPercs());
-//    for(int i = 0; i<24; ++i)
-//    lightSpec[i] = countryContrib.colorSpec[i];
-//    glUniformMatrix4fv(uniformLocation[7], 24, GL_FALSE, glm::value_ptr(blobSpec[0]));
-//    glUniform4fv(uniformLocation[8], 24, glm::value_ptr(lightSpec[0]));
-//    for(int i = 0; i<24; ++i) std::cout << i << " " << lightSpec[i].x << "," << lightSpec[i].y
-//    <<"," << lightSpec[i].z << "," <<lightSpec[i].w << std::endl;
-//
-//    /*--- (END)  Highlights preparation  ---*/
-//
-//    /*--- (BEGIN) Uniform block: Camera  ---*/
-//    glUseProgram(program[0]);
-//    uBlockIndex[0] = glGetUniformBlockIndex(program[0], "camera");
-//    if (uBlockIndex[0] == GL_INVALID_INDEX) {
-//        std::cout << "Unable to find 'camera' uniform block in the program." << std::endl; exit(EXIT_FAILURE);
-//    } ;
-//    glGetActiveUniformBlockiv(program[4], uBlockIndex[0], GL_UNIFORM_BLOCK_DATA_SIZE, &uBlockSize[0]);
-//    uBufferC = (GLubyte *) malloc(uBlockSize[0]);
-//    if (uBufferC==NULL) {
-//        std::cout << "Failed while allocating uniform block buffer." << std::endl; exit(EXIT_FAILURE);
-//    }
-//    const char* uVarNames[numCameraBlockVars] = {"modelvMatrix","projMatrix","fixedPanelMatrix"};
-//    GLuint uVarIndices[numCameraBlockVars];
-//    GLint uVarSize[numCameraBlockVars];
-//    GLint uVarOffset[numCameraBlockVars];
-//    GLint uVarType[numCameraBlockVars];
-//    glGetUniformIndices(program[0], numCameraBlockVars,uVarNames,uVarIndices);
-//    glGetActiveUniformsiv(program[0], numCameraBlockVars, uVarIndices, GL_UNIFORM_OFFSET, uVarOffset);
-//    glGetActiveUniformsiv(program[0], numCameraBlockVars, uVarIndices, GL_UNIFORM_SIZE, uVarSize);
-//    glGetActiveUniformsiv(program[0], numCameraBlockVars, uVarIndices, GL_UNIFORM_TYPE, uVarType);
-//
-//    modelMatrixAddr = uBufferC+uVarOffset[ModelvMatrix];
-//    uVarMemorySize[0] = uVarSize[ModelvMatrix]*TypeSize(uVarType[ModelvMatrix]) ;
-//    projMatrixAddr =uBufferC+uVarOffset[ProjMatrix];
-//    uVarMemorySize[1] =uVarSize[ProjMatrix]*TypeSize(uVarType[ProjMatrix]);
-//    fixedPanelMatrixAddr =uBufferC+uVarOffset[FixedPanelMatrix];
-//    uVarMemorySize[2] =uVarSize[FixedPanelMatrix]*TypeSize(uVarType[FixedPanelMatrix]);
-//
-//    memcpy(modelMatrixAddr,&modelvMatrix, uVarMemorySize[0]);
-//    memcpy(projMatrixAddr,&projMatrix, uVarMemorySize[1]);
-//    memcpy(fixedPanelMatrixAddr,&fixedPanelMatrix, uVarMemorySize[2]);
-//    uBlockBinding​[0]= 1;
-//    glUniformBlockBinding(program[0], uBlockIndex[0],uBlockBinding​[0]);
-//    glBindBufferBase(GL_UNIFORM_BUFFER, uBlockBinding​[0], shaderBuffer[4]);
-//    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer[4]);
-//    glBufferData(GL_UNIFORM_BUFFER, uBlockSize[0], uBufferC, GL_STATIC_DRAW);
-//
-//    uBlockBinding​[1]= 2;
-//    glUniformBlockBinding(program[4], uBlockIndex[0],uBlockBinding​[1]);
-//    glBindBufferBase(GL_UNIFORM_BUFFER, uBlockBinding​[1], shaderBuffer[4]);
-//    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer[4]);
-//    glBufferData(GL_UNIFORM_BUFFER, uBlockSize[0], uBufferC, GL_STATIC_DRAW);
-//    //    --- (END) Uniform block: Camera  ---
-//
-//    //    attribLocation[1] = glGetAttribLocation(program[0], "vNormal");
-//    //    glVertexAttribPointer(attribLocation[1],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-//
-//    glClearColor(bgClearColor[0],bgClearColor[1], bgClearColor[2], 1);
-//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
-//    //     glEnable(GL_CULL_FACE);
+    
+
+    /*--- (BEGIN) Sphere Preparation  ---*/
+    // program 0 draws the astronomical objects as instances of a single sphere
+    // program 0 will use VAO 0
+    glUseProgram(program[0]);
+    // Sphere Indices and Vertices
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (sizeof(solarSystem.s.theSphere.indices[0]) * solarSystem.s.theSphere.numIndices),&solarSystem.s.theSphere.indices.front(),GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
+    glBufferData(GL_ARRAY_BUFFER, ((sizeof(solarSystem.s.theSphere.vertices[0])+sizeof(solarSystem.s.theSphere.norms[0])) * solarSystem.s.theSphere.numVertices),NULL,GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (sizeof(solarSystem.s.theSphere.vertices[0]) * solarSystem.s.theSphere.numVertices), &solarSystem.s.theSphere.vertices.front());
+    glBufferSubData(GL_ARRAY_BUFFER, (sizeof(solarSystem.s.theSphere.vertices[0]) * solarSystem.s.theSphere.numVertices), (sizeof(solarSystem.s.theSphere.norms[0]) * solarSystem.s.theSphere.numVertices), &solarSystem.s.theSphere.norms.front());
+
+    glBindVertexArray(VertexArrayID[0]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
+    attribLocation[0] = glGetAttribLocation(program[0], "vPosition");
+    glVertexAttribPointer(attribLocation[0],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
+
+
+    // connect sphere specification matrices
+    uniformLocation[0] = glGetUniformLocation(program[0], "objectTrans");
+    // scale each sphere to proper size
+    for (int i=0; i < solarSystem.numObjects; i++) {
+//        float sizeF = properScale(solarModel[i].size);
+//        matr4 initScale = glm::scale(matr4(1.0f), vec3(sizeF,sizeF,sizeF));
+//        float orbitRad = properScale(solarModel[i].distFromCenterOfRot);
+//        matr4 initLoc = glm::translate(matr4(1.0f),vec3(orbitRad,0.0,0.0));
+        objTransforms[i] = solarSystem.montum[i].absLocation;
+    }
+    glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects, GL_FALSE, glm::value_ptr(objTransforms[0]));
+
+    /*--- (BEGIN) Uniform block: Camera  ---*/
+    glUseProgram(program[0]);
+    uBlockIndex[0] = glGetUniformBlockIndex(program[0], "camera");
+    if (uBlockIndex[0] == GL_INVALID_INDEX) {
+        std::cout << "Unable to find 'camera' uniform block in the program." << std::endl; exit(EXIT_FAILURE);
+    } ;
+    glGetActiveUniformBlockiv(program[0], uBlockIndex[0], GL_UNIFORM_BLOCK_DATA_SIZE, &uBlockSize[0]);
+    uBufferCamera = (GLubyte *) malloc(uBlockSize[0]);
+    if (uBufferCamera==NULL) {
+        std::cout << "Failed while allocating uniform block buffer.\n\n"; exit(EXIT_FAILURE);
+    }
+    const char* uVarNames[numCameraBlockVars] = {"modelvMatrix","projMatrix"};
+    GLuint uVarIndices[numCameraBlockVars];
+    GLint uVarSize[numCameraBlockVars];
+    GLint uVarOffset[numCameraBlockVars];
+    GLint uVarType[numCameraBlockVars];
+    glGetUniformIndices(program[0], numCameraBlockVars,uVarNames,uVarIndices);
+    glGetActiveUniformsiv(program[0], numCameraBlockVars, uVarIndices, GL_UNIFORM_OFFSET, uVarOffset);
+    glGetActiveUniformsiv(program[0], numCameraBlockVars, uVarIndices, GL_UNIFORM_SIZE, uVarSize);
+    glGetActiveUniformsiv(program[0], numCameraBlockVars, uVarIndices, GL_UNIFORM_TYPE, uVarType);
+
+    modelMatrixAddr = uBufferCamera+uVarOffset[ModelvMatrix];
+    uVarMemorySize[0] = uVarSize[ModelvMatrix]*TypeSize(uVarType[ModelvMatrix]) ;
+    projMatrixAddr =uBufferCamera+uVarOffset[ProjMatrix];
+    uVarMemorySize[1] =uVarSize[ProjMatrix]*TypeSize(uVarType[ProjMatrix]);
+
+    memcpy(modelMatrixAddr,&modelvMatrix, uVarMemorySize[0]);
+    memcpy(projMatrixAddr,&projMatrix, uVarMemorySize[1]);
+    uBlockBinding​[0]= 1;
+    glUniformBlockBinding(program[0], uBlockIndex[0],uBlockBinding​[0]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, uBlockBinding​[0], shaderBuffer[2]);
+    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer[2]);
+    glBufferData(GL_UNIFORM_BUFFER, uBlockSize[0], uBufferCamera, GL_STATIC_DRAW);
+    //    --- (END) Uniform block: Camera  ---
+
+    //    attribLocation[1] = glGetAttribLocation(program[0], "vNormal");
+    //    glVertexAttribPointer(attribLocation[1],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
 
 }
 void initTextures()
@@ -580,18 +388,35 @@ void initTextures()
 
 void updateCamera(void)
 {
-//    //    glUseProgram(program[0]);
-//    camEye = euclidCamera(camEyeR,camEyeθ,camEyeφ);
-//    modelvMatrix = glm::lookAt(camEye,camAt,camUp);
-//    projMatrix = glm::perspective(frFOV,frAspect,frNear,frFar);
-//    //    projMatrix = glm::ortho(prLeft, prRight, prBottom, prTop, prNear, prFar);
-//
-//    memcpy(modelMatrixAddr,&modelvMatrix, uVarMemorySize[0]);
-//    memcpy(projMatrixAddr,&projMatrix, uVarMemorySize[1]);
-//    memcpy(fixedPanelMatrixAddr,&fixedPanelMatrix, uVarMemorySize[2]);
-//    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer[4]);
-//    glBufferData(GL_UNIFORM_BUFFER, uBlockSize[0], uBufferC, GL_STATIC_DRAW);
+    camEye = euclidCamera(camEyeR,camEyeθ,camEyeφ);
+    modelvMatrix = glm::lookAt(camEye,camAt,camUp);
+    projMatrix = glm::perspective(frFOV,frAspect,frNear,frFar);
+
+    memcpy(modelMatrixAddr,&modelvMatrix, uVarMemorySize[0]);
+    memcpy(projMatrixAddr,&projMatrix, uVarMemorySize[1]);
+    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer[2]);
+    glBufferData(GL_UNIFORM_BUFFER, uBlockSize[0], uBufferCamera, GL_STATIC_DRAW);
+}
+void modelAnimate(void)
+{
+    solarSystem.updateMontum(60.0*24.0);
+    for (int i=0; i < solarSystem.numObjects; i++) {
+        objTransforms[i] = solarSystem.montum[i].absLocation;
+    }
+    glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects, GL_FALSE, glm::value_ptr(objTransforms[0]));
 }
 
+void drawObjects(void)
+{
+    glBindVertexArray(VertexArrayID[0]);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, textureName[0]);
+    
+    glEnableVertexAttribArray(attribLocation[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
+    solarSystem.drawMontum();
+    glDisableVertexAttribArray(attribLocation[0]);
+}
 
 #endif

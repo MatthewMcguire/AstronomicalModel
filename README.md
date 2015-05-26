@@ -31,3 +31,8 @@
 
 - Making the distances or sizes realistic in proportion
 - Taking into account gravitational interation between objects that are not in orbit around each other
+
+
+*Notes*
+Shader buffers:
+1

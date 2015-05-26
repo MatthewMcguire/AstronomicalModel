@@ -15,9 +15,13 @@ void updateDisplay() {
     if (donePausing==GL_TRUE) {
         lastPauseEnd = glfwGetTime();
         donePausing = GL_FALSE;
+        if(glfwGetMouseButton(mainWin,GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+            moveCamera();
         updateCamera();
+        modelAnimate();
     }
     // draw scene
+    drawObjects();
 
     nowFPS = glfwGetTime();
     if(nowFPS > fps[1] + 1.0) {
@@ -38,20 +42,13 @@ void updateDisplay() {
 
 int main(int argc, const char * argv[]) {
     std::cout << "Hello, Worlds!\n";
-    fps[0] = glfwGetTime();
-    assert (restart_gl_log ());
-    gl_log (" starting GLFW\n% s\n", glfwGetVersionString ());
-
-    /* Initialize graphics environment */
-    solarSystem.updateMontum(60*24*365.25/8.0);
+    fps[0] = glfwGetTime();                 // begin to measure 'time to initialize'
+    
     initGLFW();
-    log_gl_params();
     initOpenGL();
-    glClearColor(.15,.15,.15, 1);
     initTextures();
-    fps[1] = glfwGetTime();
-    std::cout << "it took " << fps[1]-fps[0] << " s. to get started.\n";
-
+    
+    std::cout << "it took " << glfwGetTime()-fps[0] << " s. to get started.\n";
     /* Enter the main interactive display loop*/
     do{
         updateDisplay();

@@ -41,6 +41,7 @@ public:
                                 //      (1 unit = 10 earth minutes)
     AstroObject *leftmostChild; // pointer to the leftmost child of this object in the object tree
     AstroObject *rightSibling;  // pointer to the right sibling of this object in the object tree
+    void report(float, float);  // print several parameters to stdout for error tracking
 };
 
 /*---  Constructor: creates an astronomical object instance             ---*/
@@ -98,33 +99,53 @@ void AstroObject::incremObject(float inc)
 
     // update currentRelVelocity
     currentRelVelocity= currentRelLocation - oldLocation;
-
+    report(incOrbit,incRot);
+}
+void AstroObject::report(float incOrbit,float incRot)
+{
+    std::cout << "obect: " << name;
+    std::cout << "  incOrbit=" << incOrbit << " incRot=" << incRot << std::endl;
+    std::cout << "  currentRelLocation = (" << currentRelLocation.x << "," << currentRelLocation.y
+        << "," << currentRelLocation.z << ")\n";
+    std::cout << "  currentOrbitAngle= " << currentOrbitAngle << "\n";
 }
 
 class AstroGroup
 {
 private:
-    std::vector<AstroObject> montum;        // a collection of astronomical objects
+
 public:
     std::vector<AstroObject>::iterator iter;
     AstroGroup();                           // basic constructor for the group of objects
     void updateMontum(float);               // traverse the objects and increment them all
     void drawMontum(void);                  // draw the objects as instances of a sphere
     void traverseM(AstroObject& ,glm::mat4);    // traverse the tree of montum and assign absLocation
-
+    BetterSphere s = BetterSphere(100,100,1.0);
+    GLsizei numObjects;
+    std::vector<AstroObject> montum;        // a collection of astronomical objects
 };
 
 AstroGroup::AstroGroup()
 {
-    AstroObject sol = AstroObject("Sol",1390000,0.01,26.0,0.0,9999.0);
-    AstroObject mercury = AstroObject("Mercury",4880.0,0.133,58.8,57910000.0,0.241);
-    AstroObject venus = AstroObject("Venus",12103.6,177.4,244.0,108200000.0,0.615);
-    AstroObject earth = AstroObject("Earth",12756.3,23.4,1.0,149600000.0,1.0);
-    AstroObject luna = AstroObject("Luna",3475.0,6.7,27.4,238900.0,0.0748);
-    AstroObject mars = AstroObject("Mars",6794.0,25.2,1.03,227940000.0,1.88);
-    AstroObject phobos = AstroObject("Phobos",13.8,0.0,9999.0,5287.0,.0008738);
-    AstroObject deimos = AstroObject("Deimos",7.8,0.0,9999.0,14580.0,0.003462);
-    AstroObject jupiter = AstroObject("Jupiter",142984.0,3.1,0.415,778330000.0,11.9);
+//    AstroObject sol = AstroObject("Sol",1390000,0.01,26.0,0.0,9999.0);
+//    AstroObject mercury = AstroObject("Mercury",4880.0,0.133,58.8,57910000.0,0.241);
+//    AstroObject venus = AstroObject("Venus",12103.6,177.4,244.0,108200000.0,0.615);
+//    AstroObject earth = AstroObject("Earth",12756.3,23.4,1.0,149600000.0,1.0);
+//    AstroObject luna = AstroObject("Luna",3475.0,6.7,27.4,238900.0,0.0748);
+//    AstroObject mars = AstroObject("Mars",6794.0,25.2,1.03,227940000.0,1.88);
+//    AstroObject phobos = AstroObject("Phobos",13.8,0.0,9999.0,5287.0,.0008738);
+//    AstroObject deimos = AstroObject("Deimos",7.8,0.0,9999.0,14580.0,0.003462);
+//    AstroObject jupiter = AstroObject("Jupiter",142984.0,3.1,0.415,778330000.0,11.9);
+    //                          initName initRadius initTiltAngle initRotSpeed initOrbitRadius initOrbitSpeed
+    AstroObject sol = AstroObject("Sol",        13.90000,   0.01,   26.0,   0.0,    9999.0);
+    AstroObject mercury = AstroObject("Mercury",.4880,      0.133,  58.8,   5.791,  0.241);
+    AstroObject venus = AstroObject("Venus",    1.210,      177.4,  244.0,  10.8,   0.615);
+    AstroObject earth = AstroObject("Earth",    1.2756,     23.4,   1.0,    14.,    1.0);
+    AstroObject luna = AstroObject("Luna",      .3475,      6.7,    27.4,   2.38,   0.0748);
+    AstroObject mars = AstroObject("Mars",      .6794,      25.2,   1.03,   22.79,  1.88);
+    AstroObject phobos = AstroObject("Phobos",  .13,        0.0,    9999.0, 5,      .0008738);
+    AstroObject deimos = AstroObject("Deimos",  .7,         0.0,    9999.0, 1.45,   0.003462);
+    AstroObject jupiter = AstroObject("Jupiter",14.2984,    3.1,    0.415,  77,     11.9);
 
     montum.push_back(sol);
     montum.push_back(mercury);
@@ -144,16 +165,37 @@ AstroGroup::AstroGroup()
     montum[5].leftmostChild = &montum[6];
     montum[6].rightSibling = &montum[7];
     montum[5].rightSibling = &montum[8];
-
-
+    
+    numObjects = GLsizei(montum.size());
 }
 void AstroGroup::updateMontum(float inc)
 {
     std::vector<AstroObject>::iterator iterStop = montum.end();
     for(iter = montum.begin(); iter < iterStop; iter++)     // increment every object in the group
         (*iter).incremObject(inc);
-    traverseM(montum[0], montum[0].relLocation); // update every absLocation matrix with parents' location
+//    traverseM(montum[0], montum[0].relLocation); // update every absLocation matrix with parents' location
+    montum[0].absLocation = montum[0].relLocation;
+    
+    montum[1].absLocation = montum[0].absLocation * glm::translate(glm::mat4(1.0),glm::vec3(5.791,0.0,0.0)) * montum[1].relLocation;
+    montum[2].absLocation = glm::translate(montum[0].absLocation,glm::vec3(10.8,0.0,0.0)) * montum[2].relLocation;
+    montum[3].absLocation = montum[0].absLocation * montum[3].relLocation;
+    montum[5].absLocation = montum[0].absLocation * montum[5].relLocation;
+    montum[8].absLocation = montum[0].absLocation * montum[8].relLocation;
+    
+    montum[4].absLocation = montum[3].absLocation * montum[4].relLocation;
+    montum[6].absLocation = montum[5].absLocation * montum[6].relLocation;
+    montum[7].absLocation = montum[5].absLocation * montum[7].relLocation;
 
+    
+//    montum[1].absLocation = montum[0].absLocation * montum[1].relLocation;
+//    montum[2].absLocation = montum[0].absLocation * montum[2].relLocation;
+//    montum[3].absLocation = montum[3].relLocation * montum[0].absLocation;
+//    montum[5].absLocation = montum[5].relLocation * montum[0].absLocation;
+//    montum[8].absLocation = montum[8].relLocation * montum[0].absLocation;
+//    
+//    montum[4].absLocation = montum[4].relLocation * montum[3].absLocation;
+//    montum[6].absLocation = montum[6].relLocation * montum[5].absLocation;
+//    montum[7].absLocation = montum[7].relLocation * montum[5].absLocation;
 }
 
 void AstroGroup::traverseM(AstroObject& node,glm::mat4 m)
@@ -163,9 +205,16 @@ void AstroGroup::traverseM(AstroObject& node,glm::mat4 m)
     if (node.rightSibling!= NULL) traverseM(*(node.rightSibling),m);
 }
 
+// This function should only be called when the relevant shader buffers have been bound
 void AstroGroup::drawMontum(void)
 {
-    
+    glDrawElementsInstanced(GL_TRIANGLE_FAN,(s.theSphere.fans+2),GL_UNSIGNED_INT, (void*)(0 * sizeof(GLuint)), 5);
+    for (int j = 0; j<(s.theSphere.bands-2); j++) {
+        glDrawElementsInstanced(GL_TRIANGLE_STRIP,(2*s.theSphere.fans+2), GL_UNSIGNED_INT,
+                       (void*)(((s.theSphere.fans+2)+j*(2*s.theSphere.fans+2)) * sizeof(GLuint)),5);
+    }
+    glDrawElementsInstanced(GL_TRIANGLE_FAN,(s.theSphere.fans+2),GL_UNSIGNED_INT,
+                   (void*)((s.theSphere.numIndices-s.theSphere.fans-2) * sizeof(GLuint)),5);
 }
 
 #endif

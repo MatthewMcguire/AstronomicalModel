@@ -32,6 +32,7 @@
 
 /* Begin PBXFileReference section */
 		34C3B1661B124D9B00245D52 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
+		34C3B1681B13685700245D52 /* BetterSphere.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BetterSphere.h; sourceTree = "<group>"; };
 		34FC1F321B0FAF2B00AD6E0E /* AstronomicalModel */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = AstronomicalModel; sourceTree = BUILT_PRODUCTS_DIR; };
 		34FC1F351B0FAF2B00AD6E0E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		34FC1F3C1B0FAF7100AD6E0E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
@@ -41,7 +42,6 @@
 		34FC1F441B0FAF9200AD6E0E /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		34FC1F461B0FAFA400AD6E0E /* libglfw3.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libglfw3.a; path = /usr/local/lib/libglfw3.a; sourceTree = "<absolute>"; };
 		34FC1F481B0FB93200AD6E0E /* main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
-		34FC1F4D1B0FBABD00AD6E0E /* BetterSphere.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; fileEncoding = 4; name = BetterSphere.h; path = /Users/matthew/Documents/_code/AstronomicalModel/AstronomicalModel/AstronomicalModel/BetterSphere.h; sourceTree = "<absolute>"; };
 		34FC1F4E1B0FC08400AD6E0E /* lib3D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = lib3D.cpp; sourceTree = "<group>"; };
 		34FC1F4F1B0FC08400AD6E0E /* lib3D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lib3D.h; sourceTree = "<group>"; };
 		34FC1F511B0FD2F500AD6E0E /* AstronObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AstronObject.h; sourceTree = "<group>"; };
@@ -117,8 +117,8 @@
 			isa = PBXGroup;
 			children = (
 				34FC1F4F1B0FC08400AD6E0E /* lib3D.h */,
+				34C3B1681B13685700245D52 /* BetterSphere.h */,
 				34FC1F4E1B0FC08400AD6E0E /* lib3D.cpp */,
-				34FC1F4D1B0FBABD00AD6E0E /* BetterSphere.h */,
 				34FC1F511B0FD2F500AD6E0E /* AstronObject.h */,
 			);
 			name = myLibs;

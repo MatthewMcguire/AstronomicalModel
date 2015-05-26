@@ -11,49 +11,41 @@
 
 #include <vector>
 
+const float orbitPerInc = (M_PI*2.0)/(365.25*24.0*60.0);
+const float rotPerInc = (M_PI*2.0)/(24.0*60.0);
+const float twoPi = 2.0*M_PI;
+
 class AstroObject
 {
 private:
-    std::string name;           // a simple name for the object
     float radius;               // radius (in world-space units)
     float tiltAngle;            // tilt of the object from pos-y axis (radians)
     float rotSpeed;             // how fast it rotates on its axis (units relative to earth)
     float orbitRadius;          // radius of its orbit (units relative to earth)
     float orbitSpeed;           // how fast it orbits (units relative to earth)
-
     glm::vec3 rotateAxis;       // the axis of rotational motion
     glm::vec3 orbitAxis;        // the axis of orbital motion
-    glm::mat4 relLocation;      // current matrix of transformation relative to parent
-    glm::mat4 relOrientScale;     // current matrix of transformation relative to parent
+    glm::mat4 relOrientScale;   // current matrix of transformation relative to parent
     // texture                  // not sure yet how to specify the texture
     // material                 // this will be an instance of a future material specification class
 public:
     AstroObject(std::string, float, float, float, float, float );
+    std::string name;           // a simple name for the object
     float currentRotAngle;      // current rotation angle (radians, clamped to 0 to 2pi)
     float currentOrbitAngle;    // current orbit angle (radians, clamped to 0 to 2pi)
-    glm::vec3 currentLocation;  // current location (in world-space coordinates)
-    glm::vec3 currentVelocity;  // approximate velocity vector (in world-space coordinates
+    glm::vec3 currentRelLocation;  // current location (in world-space coordinates)
+    glm::vec3 currentRelVelocity;  // approximate velocity vector (in world-space coordinates
+    glm::mat4 absLocation;      // current matrix of absolute location transformation in world coords
+    glm::mat4 relLocation;      // current matrix of transformation relative to parent
     void incremObject(float);   // this function increments the object in its orbit and rotation
                                 //      (1 unit = 10 earth minutes)
-};
-
-class AstroGroup
-{
-private:
-    std::vector<AstroObject> montum;        // a collection of astronomical objects
-    std::vector<glm::mat4> absTransform;    // a collation of matrices to apply to each basic sphere
-public:
-    void updateMontum(float);               // traverse the objects and increment them all
-    void drawMontum(void);                  // draw the objects as instances of a sphere
+    AstroObject *leftmostChild; // pointer to the leftmost child of this object in the object tree
+    AstroObject *rightSibling;  // pointer to the right sibling of this object in the object tree
 };
 
 /*---  Constructor: creates an astronomical object instance             ---*/
-AstroObject::AstroObject(std::string initName,
-                         float initRadius,
-                         float initTiltAngle,
-                         float initRotSpeed,
-                         float initOrbitRadius,
-                         float initOrbitSpeed)
+AstroObject::AstroObject(std::string initName, float initRadius, float initTiltAngle,
+                         float initRotSpeed, float initOrbitRadius, float initOrbitSpeed)
 {
     name = initName;
     radius = initRadius;
@@ -63,26 +55,117 @@ AstroObject::AstroObject(std::string initName,
     orbitSpeed = initOrbitSpeed;
     currentRotAngle = 0.0;
     currentOrbitAngle = 0.0;
-    currentLocation = glm::vec3(orbitRadius,0.0,0.0);
-    currentVelocity = glm::vec3(0.0);
-    relLocation = glm::translate(glm::mat4(1.0f),currentLocation);  // for now, initial loc is on pos x-Axis
+    currentRelLocation = glm::vec3(orbitRadius,0.0,0.0);
+    currentRelVelocity = glm::vec3(0.0);
+    relLocation = glm::translate(glm::mat4(1.0f),currentRelLocation);  // for now, initial loc is on pos x-Axis
     relOrientScale = glm::scale(glm::mat4(1.0f),glm::vec3(radius,radius,radius));
     rotateAxis = glm::vec3(0.0,1.0,0.0);
     orbitAxis = glm::vec3(0.0,1.0,0.0);
+    leftmostChild = NULL;
+    rightSibling = NULL;
+    absLocation = glm::mat4(1.0);
 }
 
 /*---  This function increments the object in its orbit and rotation    ---*/
 void AstroObject::incremObject(float inc)
 {
     // turn the 'inc' variable into a rotational and orbital increment
-    
-    // update the relLocation matrix by rotating around the orbital axis
-    // update the relOrientScale matrix by rotating around the rotational axis
-    // update currentRotAngle
-    // update currentOrbitAngle
-    // update currentLocation
-    // update currentVelocity
+    // a single unit of 'inc' is scaled to be one minute of earth time.
+    float incOrbit = orbitPerInc * inc / orbitSpeed;
+    float incRot = rotPerInc * inc / rotSpeed;
 
+    // update the relOrientScale matrix by rotating around the rotational axis
+    relOrientScale= glm::translate(relOrientScale,-currentRelLocation);
+    relOrientScale = glm::rotate(relOrientScale,incRot,rotateAxis);
+    relOrientScale= glm::translate(relOrientScale,currentRelLocation);
+
+    // update the relLocation matrix by rotating around the orbital axis
+    relLocation = glm::rotate(relLocation,incOrbit,orbitAxis);
+
+    // update currentRotAngle
+    currentRotAngle += incRot;
+    while (currentRotAngle > twoPi) currentRotAngle -= twoPi;       // keep angle in [0,2π]
+    while (currentRotAngle < 0.0) currentRotAngle += twoPi;       // keep angle in [0,2π]
+
+    // update currentOrbitAngle
+    currentOrbitAngle += incOrbit;
+    while (currentOrbitAngle > twoPi) currentOrbitAngle -= twoPi;       // keep angle in [0,2π]
+    while (currentOrbitAngle < 0.0) currentOrbitAngle += twoPi;       // keep angle in [0,2π]
+
+    // update currentRelLocation
+    glm::vec3 oldLocation=currentRelLocation;
+    currentRelLocation = glm::vec3(glm::vec4(orbitRadius,0.0,0.0,1.0) * relLocation);
+
+    // update currentRelVelocity
+    currentRelVelocity= currentRelLocation - oldLocation;
+
+}
+
+class AstroGroup
+{
+private:
+    std::vector<AstroObject> montum;        // a collection of astronomical objects
+public:
+    std::vector<AstroObject>::iterator iter;
+    AstroGroup();                           // basic constructor for the group of objects
+    void updateMontum(float);               // traverse the objects and increment them all
+    void drawMontum(void);                  // draw the objects as instances of a sphere
+    void traverseM(AstroObject& ,glm::mat4);    // traverse the tree of montum and assign absLocation
+
+};
+
+AstroGroup::AstroGroup()
+{
+    AstroObject sol = AstroObject("Sol",1390000,0.01,26.0,0.0,9999.0);
+    AstroObject mercury = AstroObject("Mercury",4880.0,0.133,58.8,57910000.0,0.241);
+    AstroObject venus = AstroObject("Venus",12103.6,177.4,244.0,108200000.0,0.615);
+    AstroObject earth = AstroObject("Earth",12756.3,23.4,1.0,149600000.0,1.0);
+    AstroObject luna = AstroObject("Luna",3475.0,6.7,27.4,238900.0,0.0748);
+    AstroObject mars = AstroObject("Mars",6794.0,25.2,1.03,227940000.0,1.88);
+    AstroObject phobos = AstroObject("Phobos",13.8,0.0,9999.0,5287.0,.0008738);
+    AstroObject deimos = AstroObject("Deimos",7.8,0.0,9999.0,14580.0,0.003462);
+    AstroObject jupiter = AstroObject("Jupiter",142984.0,3.1,0.415,778330000.0,11.9);
+
+    montum.push_back(sol);
+    montum.push_back(mercury);
+    montum.push_back(venus);
+    montum.push_back(earth);
+    montum.push_back(luna);
+    montum.push_back(mars);
+    montum.push_back(phobos);
+    montum.push_back(deimos);
+    montum.push_back(jupiter);
+    
+    montum[0].leftmostChild = &montum[1];
+    montum[1].rightSibling = &montum[2];
+    montum[2].rightSibling= &montum[3];
+    montum[3].leftmostChild = &montum[4];
+    montum[3].rightSibling = &montum[5];
+    montum[5].leftmostChild = &montum[6];
+    montum[6].rightSibling = &montum[7];
+    montum[5].rightSibling = &montum[8];
+
+
+}
+void AstroGroup::updateMontum(float inc)
+{
+    std::vector<AstroObject>::iterator iterStop = montum.end();
+    for(iter = montum.begin(); iter < iterStop; iter++)     // increment every object in the group
+        (*iter).incremObject(inc);
+    traverseM(montum[0], montum[0].relLocation); // update every absLocation matrix with parents' location
+
+}
+
+void AstroGroup::traverseM(AstroObject& node,glm::mat4 m)
+{
+    node.absLocation =  node.relLocation * m;
+    if (node.leftmostChild != NULL) traverseM(*(node.leftmostChild),node.absLocation);
+    if (node.rightSibling!= NULL) traverseM(*(node.rightSibling),m);
+}
+
+void AstroGroup::drawMontum(void)
+{
+    
 }
 
 #endif

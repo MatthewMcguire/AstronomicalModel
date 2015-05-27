@@ -76,22 +76,23 @@ void AstroObject::incremObject(float inc)
     float incRot = rotPerInc * inc / rotSpeed;
 
     // update the relOrientScale matrix by rotating around the rotational axis
-    relOrientScale= glm::translate(relOrientScale,-currentRelLocation);
-    relOrientScale = glm::rotate(relOrientScale,incRot,rotateAxis);
     relOrientScale= glm::translate(relOrientScale,currentRelLocation);
+    relOrientScale = glm::rotate(relOrientScale,incRot,rotateAxis);
+    relOrientScale= glm::translate(relOrientScale,-currentRelLocation);
 
-    // update the relLocation matrix by rotating around the orbital axis
-    relLocation = glm::rotate(relLocation,incOrbit,orbitAxis);
+    // update currentOrbitAngle
+    currentOrbitAngle += incOrbit;
+    while (currentOrbitAngle > twoPi) currentOrbitAngle -= twoPi;       // keep angle in [0,2π]
+    while (currentOrbitAngle < 0.0) currentOrbitAngle += twoPi;       // keep angle in [0,2π]
 
     // update currentRotAngle
     currentRotAngle += incRot;
     while (currentRotAngle > twoPi) currentRotAngle -= twoPi;       // keep angle in [0,2π]
     while (currentRotAngle < 0.0) currentRotAngle += twoPi;       // keep angle in [0,2π]
 
-    // update currentOrbitAngle
-    currentOrbitAngle += incOrbit;
-    while (currentOrbitAngle > twoPi) currentOrbitAngle -= twoPi;       // keep angle in [0,2π]
-    while (currentOrbitAngle < 0.0) currentOrbitAngle += twoPi;       // keep angle in [0,2π]
+    // update the relLocation matrix by rotating around the orbital axis
+    glm::mat4 tInv = glm::translate(matr4(1.0f),glm::vec3(orbitRadius,0.0,0.0));
+    relLocation = glm::rotate(matr4(1.0f),currentOrbitAngle,orbitAxis) * tInv;
 
     // update currentRelLocation
     glm::vec3 oldLocation=currentRelLocation;
@@ -99,7 +100,6 @@ void AstroObject::incremObject(float inc)
 
     // update currentRelVelocity
     currentRelVelocity= currentRelLocation - oldLocation;
-    report(incOrbit,incRot);
 }
 void AstroObject::report(float incOrbit,float incRot)
 {
@@ -176,8 +176,8 @@ void AstroGroup::updateMontum(float inc)
 //    traverseM(montum[0], montum[0].relLocation); // update every absLocation matrix with parents' location
     montum[0].absLocation = montum[0].relLocation;
     
-    montum[1].absLocation = montum[0].absLocation * montum[1].relLocation * glm::translate(glm::mat4(1.0),glm::vec3(-5.791,0.0,0.0));
-    montum[2].absLocation = montum[0].absLocation * montum[2].relLocation * glm::translate(glm::mat4(1.0),glm::vec3(-10.8,0.0,0.0));
+    montum[1].absLocation = montum[0].absLocation * montum[1].relLocation;
+    montum[2].absLocation = montum[0].absLocation * montum[2].relLocation;
     montum[3].absLocation = montum[0].absLocation * montum[3].relLocation;
     montum[5].absLocation = montum[0].absLocation * montum[5].relLocation;
     montum[8].absLocation = montum[0].absLocation * montum[8].relLocation;
@@ -186,16 +186,6 @@ void AstroGroup::updateMontum(float inc)
     montum[6].absLocation = montum[5].absLocation * montum[6].relLocation;
     montum[7].absLocation = montum[5].absLocation * montum[7].relLocation;
 
-    
-//    montum[1].absLocation = montum[0].absLocation * montum[1].relLocation;
-//    montum[2].absLocation = montum[0].absLocation * montum[2].relLocation;
-//    montum[3].absLocation = montum[3].relLocation * montum[0].absLocation;
-//    montum[5].absLocation = montum[5].relLocation * montum[0].absLocation;
-//    montum[8].absLocation = montum[8].relLocation * montum[0].absLocation;
-//    
-//    montum[4].absLocation = montum[4].relLocation * montum[3].absLocation;
-//    montum[6].absLocation = montum[6].relLocation * montum[5].absLocation;
-//    montum[7].absLocation = montum[7].relLocation * montum[5].absLocation;
 }
 
 void AstroGroup::traverseM(AstroObject& node,glm::mat4 m)
@@ -208,13 +198,13 @@ void AstroGroup::traverseM(AstroObject& node,glm::mat4 m)
 // This function should only be called when the relevant shader buffers have been bound
 void AstroGroup::drawMontum(void)
 {
-    glDrawElementsInstanced(GL_TRIANGLE_FAN,(s.theSphere.fans+2),GL_UNSIGNED_INT, (void*)(0 * sizeof(GLuint)), 6);
+    glDrawElementsInstanced(GL_TRIANGLE_FAN,(s.theSphere.fans+2),GL_UNSIGNED_INT, (void*)(0 * sizeof(GLuint)), numObjects);
     for (int j = 0; j<(s.theSphere.bands-2); j++) {
         glDrawElementsInstanced(GL_TRIANGLE_STRIP,(2*s.theSphere.fans+2), GL_UNSIGNED_INT,
-                       (void*)(((s.theSphere.fans+2)+j*(2*s.theSphere.fans+2)) * sizeof(GLuint)),6);
+                       (void*)(((s.theSphere.fans+2)+j*(2*s.theSphere.fans+2)) * sizeof(GLuint)),numObjects);
     }
     glDrawElementsInstanced(GL_TRIANGLE_FAN,(s.theSphere.fans+2),GL_UNSIGNED_INT,
-                   (void*)((s.theSphere.numIndices-s.theSphere.fans-2) * sizeof(GLuint)),6);
+                   (void*)((s.theSphere.numIndices-s.theSphere.fans-2) * sizeof(GLuint)),numObjects);
 }
 
 #endif

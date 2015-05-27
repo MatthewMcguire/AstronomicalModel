@@ -399,7 +399,7 @@ void updateCamera(void)
 }
 void modelAnimate(void)
 {
-    solarSystem.updateMontum(60.0*24.0);
+    solarSystem.updateMontum(60.0);
     for (int i=0; i < solarSystem.numObjects; i++) {
         objTransforms[i] = solarSystem.montum[i].absLocation;
     }

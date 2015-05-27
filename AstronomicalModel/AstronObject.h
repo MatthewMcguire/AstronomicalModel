@@ -120,7 +120,7 @@ public:
     void updateMontum(float);               // traverse the objects and increment them all
     void drawMontum(void);                  // draw the objects as instances of a sphere
     void traverseM(AstroObject& ,glm::mat4);    // traverse the tree of montum and assign absLocation
-    BetterSphere s = BetterSphere(100,100,1.0);
+    BetterSphere s = BetterSphere(15,15,1.0);
     GLsizei numObjects;
     std::vector<AstroObject> montum;        // a collection of astronomical objects
 };
@@ -176,8 +176,8 @@ void AstroGroup::updateMontum(float inc)
 //    traverseM(montum[0], montum[0].relLocation); // update every absLocation matrix with parents' location
     montum[0].absLocation = montum[0].relLocation;
     
-    montum[1].absLocation = montum[0].absLocation * glm::translate(glm::mat4(1.0),glm::vec3(5.791,0.0,0.0)) * montum[1].relLocation;
-    montum[2].absLocation = glm::translate(montum[0].absLocation,glm::vec3(10.8,0.0,0.0)) * montum[2].relLocation;
+    montum[1].absLocation = montum[0].absLocation * montum[1].relLocation * glm::translate(glm::mat4(1.0),glm::vec3(-5.791,0.0,0.0));
+    montum[2].absLocation = montum[0].absLocation * montum[2].relLocation * glm::translate(glm::mat4(1.0),glm::vec3(-10.8,0.0,0.0));
     montum[3].absLocation = montum[0].absLocation * montum[3].relLocation;
     montum[5].absLocation = montum[0].absLocation * montum[5].relLocation;
     montum[8].absLocation = montum[0].absLocation * montum[8].relLocation;
@@ -208,13 +208,13 @@ void AstroGroup::traverseM(AstroObject& node,glm::mat4 m)
 // This function should only be called when the relevant shader buffers have been bound
 void AstroGroup::drawMontum(void)
 {
-    glDrawElementsInstanced(GL_TRIANGLE_FAN,(s.theSphere.fans+2),GL_UNSIGNED_INT, (void*)(0 * sizeof(GLuint)), 5);
+    glDrawElementsInstanced(GL_TRIANGLE_FAN,(s.theSphere.fans+2),GL_UNSIGNED_INT, (void*)(0 * sizeof(GLuint)), 6);
     for (int j = 0; j<(s.theSphere.bands-2); j++) {
         glDrawElementsInstanced(GL_TRIANGLE_STRIP,(2*s.theSphere.fans+2), GL_UNSIGNED_INT,
-                       (void*)(((s.theSphere.fans+2)+j*(2*s.theSphere.fans+2)) * sizeof(GLuint)),5);
+                       (void*)(((s.theSphere.fans+2)+j*(2*s.theSphere.fans+2)) * sizeof(GLuint)),6);
     }
     glDrawElementsInstanced(GL_TRIANGLE_FAN,(s.theSphere.fans+2),GL_UNSIGNED_INT,
-                   (void*)((s.theSphere.numIndices-s.theSphere.fans-2) * sizeof(GLuint)),5);
+                   (void*)((s.theSphere.numIndices-s.theSphere.fans-2) * sizeof(GLuint)),6);
 }
 
 #endif

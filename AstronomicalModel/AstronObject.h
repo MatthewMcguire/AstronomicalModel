@@ -25,7 +25,6 @@ private:
     float orbitSpeed;           // how fast it orbits (units relative to earth)
     glm::vec3 rotateAxis;       // the axis of rotational motion
     glm::vec3 orbitAxis;        // the axis of orbital motion
-    glm::mat4 relOrientScale;   // current matrix of transformation relative to parent
     // texture                  // not sure yet how to specify the texture
     // material                 // this will be an instance of a future material specification class
 public:
@@ -37,6 +36,7 @@ public:
     glm::vec3 currentRelVelocity;  // approximate velocity vector (in world-space coordinates
     glm::mat4 absLocation;      // current matrix of absolute location transformation in world coords
     glm::mat4 relLocation;      // current matrix of transformation relative to parent
+    glm::mat4 relOrientScale;   // current matrix of transformation relative to parent
     void incremObject(float);   // this function increments the object in its orbit and rotation
                                 //      (1 unit = 10 earth minutes)
     AstroObject *leftmostChild; // pointer to the leftmost child of this object in the object tree
@@ -76,9 +76,9 @@ void AstroObject::incremObject(float inc)
     float incRot = rotPerInc * inc / rotSpeed;
 
     // update the relOrientScale matrix by rotating around the rotational axis
-    relOrientScale= glm::translate(relOrientScale,currentRelLocation);
-    relOrientScale = glm::rotate(relOrientScale,incRot,rotateAxis);
-    relOrientScale= glm::translate(relOrientScale,-currentRelLocation);
+//    relOrientScale= glm::translate(relOrientScale,currentRelLocation);
+//    relOrientScale = glm::rotate(relOrientScale,incRot,rotateAxis);
+//    relOrientScale= glm::translate(relOrientScale,-currentRelLocation);
 
     // update currentOrbitAngle
     currentOrbitAngle += incOrbit;
@@ -91,8 +91,9 @@ void AstroObject::incremObject(float inc)
     while (currentRotAngle < 0.0) currentRotAngle += twoPi;       // keep angle in [0,2π]
 
     // update the relLocation matrix by rotating around the orbital axis
-    glm::mat4 tInv = glm::translate(matr4(1.0f),glm::vec3(orbitRadius,0.0,0.0));
-    relLocation = glm::rotate(matr4(1.0f),currentOrbitAngle,orbitAxis) * tInv;
+    glm::mat4 temp1 = glm::rotate(matr4(1.0f),-currentOrbitAngle,orbitAxis);
+    glm::mat4 temp2 = glm::translate(matr4(1.0f),glm::vec3(orbitRadius,0.0,0.0));
+    relLocation = glm::rotate(matr4(1.0f),currentOrbitAngle,orbitAxis) * temp2 * temp1;
 
     // update currentRelLocation
     glm::vec3 oldLocation=currentRelLocation;
@@ -127,15 +128,16 @@ public:
 
 AstroGroup::AstroGroup()
 {
-//    AstroObject sol = AstroObject("Sol",1390000,0.01,26.0,0.0,9999.0);
-//    AstroObject mercury = AstroObject("Mercury",4880.0,0.133,58.8,57910000.0,0.241);
-//    AstroObject venus = AstroObject("Venus",12103.6,177.4,244.0,108200000.0,0.615);
-//    AstroObject earth = AstroObject("Earth",12756.3,23.4,1.0,149600000.0,1.0);
-//    AstroObject luna = AstroObject("Luna",3475.0,6.7,27.4,238900.0,0.0748);
-//    AstroObject mars = AstroObject("Mars",6794.0,25.2,1.03,227940000.0,1.88);
-//    AstroObject phobos = AstroObject("Phobos",13.8,0.0,9999.0,5287.0,.0008738);
-//    AstroObject deimos = AstroObject("Deimos",7.8,0.0,9999.0,14580.0,0.003462);
-//    AstroObject jupiter = AstroObject("Jupiter",142984.0,3.1,0.415,778330000.0,11.9);
+    //                          initName initRadius initTiltAngle initRotSpeed initOrbitRadius initOrbitSpeed
+//    AstroObject sol = AstroObject(    "Sol",      1390000,    0.01,   26.0,   0.0,            9999.0);
+//    AstroObject mercury = AstroObject("Mercury",  4880.0,     0.133,  58.8,   57910000.0,     0.241);
+//    AstroObject venus = AstroObject(  "Venus",    12103.6,    177.4,  244.0,  108200000.0,    0.615);
+//    AstroObject earth = AstroObject(  "Earth",    12756.3,    23.4,   1.0,    149600000.0,    1.0);
+//    AstroObject luna = AstroObject(   "Luna",     3475.0,     6.7,    27.4,   238900.0,       0.0748);
+//    AstroObject mars = AstroObject(   "Mars",     6794.0,     25.2,   1.03,   227940000.0,    1.88);
+//    AstroObject phobos = AstroObject( "Phobos",   13.8,       0.0,    9999.0, 5287.0,         .0008738);
+//    AstroObject deimos = AstroObject( "Deimos",   7.8,        0.0,    9999.0, 14580.0,        0.003462);
+//    AstroObject jupiter = AstroObject("Jupiter",  142984.0,   3.1,    0.415,  778330000.0,    11.9);
     //                          initName initRadius initTiltAngle initRotSpeed initOrbitRadius initOrbitSpeed
     AstroObject sol = AstroObject("Sol",        13.90000,   0.01,   26.0,   0.0,    9999.0);
     AstroObject mercury = AstroObject("Mercury",.4880,      0.133,  58.8,   5.791,  0.241);

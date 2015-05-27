@@ -59,7 +59,7 @@ enum {ModelvMatrix,ProjMatrix,numCameraBlockVars};
 GLubyte * modelMatrixAddr;
 GLubyte * projMatrixAddr;
 size_t uVarMemorySize[numCameraBlockVars];
-matr4 objTransforms[20];
+
 
 // the camera begins out on the positive z-axis, looking at the origin
 GLfloat camEyeθ = M_PI;         // θ is measured around the x-z plane, begins at pi
@@ -78,15 +78,24 @@ GLfloat frFar = 6000.0f;            // far side of perspective frustrum
 GLfloat accelFactor = 0.2f;
 GLfloat zoomFactor = 0.15f;
 GLfloat rShift;                 // magnitude of mouse scroll event
+/*@@##====--- Model and View parameters (END) ---====##@@*/
+
+/*@@##====--- Simulation parameters (BEGIN) ---====##@@*/
+float simulationSpeed = 1.0;
 GLboolean donePausing = GL_TRUE;
 GLdouble lastPauseEnd;
 GLdouble pauseLength = 0.02;    // update wait duration (in seconds) for mouse-driven events
-
-/*@@##====--- Model and View parameters (END) ---====##@@*/
-
+matr4 objTransforms[20];        // array of model transforms for each object
+/*@@##====--- Simulation parameters (END) ---====##@@*/
 
 //*********************************************************
 /*@@##====--- General helper functions (BEGIN) ---====##@@*/
+void reportSpeed(void)
+{
+    float hoursPerSecond = simulationSpeed/pauseLength;         // number of simulation 'hours' per sec.
+    hoursPerSecond = float(int(hoursPerSecond*100.0))/100.0;    // round to hundredths
+    std::cout << "Simulation speed: " << hoursPerSecond << " hours per second" << std::endl;
+}
 void togglePolyMode(void)
 {
     switch(polygonModeToggle) {
@@ -182,8 +191,12 @@ void specialKeyTyping(GLFWwindow* mainWin, int key, int scancode, int action, in
         case GLFW_KEY_DOWN:
         break;
         case GLFW_KEY_LEFT:
+            simulationSpeed -= 0.25;
+            reportSpeed();
         break;
         case GLFW_KEY_RIGHT:
+            simulationSpeed += 0.25;
+            reportSpeed();
         break;
         case GLFW_KEY_SPACE:
         default:
@@ -298,7 +311,7 @@ void initOpenGL()
 //        matr4 initScale = glm::scale(matr4(1.0f), vec3(sizeF,sizeF,sizeF));
 //        float orbitRad = properScale(solarModel[i].distFromCenterOfRot);
 //        matr4 initLoc = glm::translate(matr4(1.0f),vec3(orbitRad,0.0,0.0));
-        objTransforms[i] = solarSystem.montum[i].absLocation;
+        objTransforms[i] = solarSystem.montum[i].absLocation * solarSystem.montum[i].relOrientScale;
     }
     glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects, GL_FALSE, glm::value_ptr(objTransforms[0]));
 
@@ -341,7 +354,8 @@ void initOpenGL()
     //    glVertexAttribPointer(attribLocation[1],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
-
+    
+    reportSpeed();
 }
 void initTextures()
 {
@@ -399,9 +413,9 @@ void updateCamera(void)
 }
 void modelAnimate(void)
 {
-    solarSystem.updateMontum(60.0);
+    solarSystem.updateMontum(60.0 * simulationSpeed);
     for (int i=0; i < solarSystem.numObjects; i++) {
-        objTransforms[i] = solarSystem.montum[i].absLocation;
+        objTransforms[i] = solarSystem.montum[i].absLocation * solarSystem.montum[i].relOrientScale;
     }
     glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects, GL_FALSE, glm::value_ptr(objTransforms[0]));
 }
@@ -418,5 +432,6 @@ void drawObjects(void)
     solarSystem.drawMontum();
     glDisableVertexAttribArray(attribLocation[0]);
 }
+
 
 #endif

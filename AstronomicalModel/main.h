@@ -130,6 +130,7 @@ void moveCamera(void)
     camRight = {cos(camEyeθ),0,-sin(camEyeθ)};
     camUp = glm::cross(camEye,camRight);
 }
+
 /*@@##====--- General helper functions (END) ---====##@@*/
 
 //********************************************************
@@ -187,8 +188,10 @@ void specialKeyTyping(GLFWwindow* mainWin, int key, int scancode, int action, in
         quitApp(mainWin);
         break;
         case GLFW_KEY_UP:
+            solarSystem.adjustScale(+0.01);
         break;
         case GLFW_KEY_DOWN:
+            solarSystem.adjustScale(-0.01);
         break;
         case GLFW_KEY_LEFT:
             simulationSpeed -= 0.25;
@@ -290,11 +293,20 @@ void initOpenGL()
     glUseProgram(program[0]);
     // Sphere Indices and Vertices
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (sizeof(solarSystem.s.theSphere.indices[0]) * solarSystem.s.theSphere.numIndices),&solarSystem.s.theSphere.indices.front(),GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 (sizeof(solarSystem.s.theSphere.indices[0]) * solarSystem.s.theSphere.numIndices),
+                 &solarSystem.s.theSphere.indices.front(),GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
-    glBufferData(GL_ARRAY_BUFFER, ((sizeof(solarSystem.s.theSphere.vertices[0])+sizeof(solarSystem.s.theSphere.norms[0])) * solarSystem.s.theSphere.numVertices),NULL,GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (sizeof(solarSystem.s.theSphere.vertices[0]) * solarSystem.s.theSphere.numVertices), &solarSystem.s.theSphere.vertices.front());
-    glBufferSubData(GL_ARRAY_BUFFER, (sizeof(solarSystem.s.theSphere.vertices[0]) * solarSystem.s.theSphere.numVertices), (sizeof(solarSystem.s.theSphere.norms[0]) * solarSystem.s.theSphere.numVertices), &solarSystem.s.theSphere.norms.front());
+    glBufferData(GL_ARRAY_BUFFER,
+                 ((sizeof(solarSystem.s.theSphere.vertices[0])+sizeof(solarSystem.s.theSphere.norms[0]))
+                  * solarSystem.s.theSphere.numVertices),NULL,GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0,
+                    (sizeof(solarSystem.s.theSphere.vertices[0]) * solarSystem.s.theSphere.numVertices),
+                    &solarSystem.s.theSphere.vertices.front());
+    glBufferSubData(GL_ARRAY_BUFFER,
+                    (sizeof(solarSystem.s.theSphere.vertices[0]) * solarSystem.s.theSphere.numVertices),
+                    (sizeof(solarSystem.s.theSphere.norms[0]) * solarSystem.s.theSphere.numVertices),
+                    &solarSystem.s.theSphere.norms.front());
 
     glBindVertexArray(VertexArrayID[0]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
@@ -313,13 +325,15 @@ void initOpenGL()
 //        matr4 initLoc = glm::translate(matr4(1.0f),vec3(orbitRad,0.0,0.0));
         objTransforms[i] = solarSystem.montum[i].absLocation * solarSystem.montum[i].relOrientScale;
     }
-    glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects, GL_FALSE, glm::value_ptr(objTransforms[0]));
+    glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects,
+                       GL_FALSE, glm::value_ptr(objTransforms[0]));
 
     /*--- (BEGIN) Uniform block: Camera  ---*/
     glUseProgram(program[0]);
     uBlockIndex[0] = glGetUniformBlockIndex(program[0], "camera");
     if (uBlockIndex[0] == GL_INVALID_INDEX) {
-        std::cout << "Unable to find 'camera' uniform block in the program." << std::endl; exit(EXIT_FAILURE);
+        std::cout << "Unable to find 'camera' uniform block in the program." << std::endl;
+        exit(EXIT_FAILURE);
     } ;
     glGetActiveUniformBlockiv(program[0], uBlockIndex[0], GL_UNIFORM_BLOCK_DATA_SIZE, &uBlockSize[0]);
     uBufferCamera = (GLubyte *) malloc(uBlockSize[0]);

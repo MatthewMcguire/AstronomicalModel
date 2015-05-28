@@ -74,7 +74,7 @@ namespace myOpenGl3D {
     }
     
     // convert camera location from spherical to euclidean
-    point3 euclidCamera(GLfloat r,GLfloat th, GLfloat ph);
+    point3 euclidSpherical(GLfloat r,GLfloat th, GLfloat ph);
     
     // error callback function
     void errorCallb(int errcode, const char* desc);

@@ -208,7 +208,7 @@ case Enum: size = Count * sizeof(Type); break
     }
     
     // convert camera location from spherical to euclidean
-    point3 euclidCamera(GLfloat r,GLfloat th, GLfloat ph) {
+    point3 euclidSpherical(GLfloat r,GLfloat th, GLfloat ph) {
         return point3(r*sin(ph)*sin(th), r*cos(ph), r*cos(th)*sin(ph));
     }
     

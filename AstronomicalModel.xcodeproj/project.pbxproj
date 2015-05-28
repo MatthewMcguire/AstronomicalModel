@@ -31,6 +31,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		348C265D1B17A3E0008F9AAC /* screenCap1.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = screenCap1.mp4; sourceTree = "<group>"; };
 		34C3B1661B124D9B00245D52 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		34C3B1681B13685700245D52 /* BetterSphere.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BetterSphere.h; sourceTree = "<group>"; };
 		34FC1F321B0FAF2B00AD6E0E /* AstronomicalModel */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = AstronomicalModel; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -105,6 +106,7 @@
 		34FC1F491B0FB95B00AD6E0E /* screenshots */ = {
 			isa = PBXGroup;
 			children = (
+				348C265D1B17A3E0008F9AAC /* screenCap1.mp4 */,
 			);
 			name = screenshots;
 			sourceTree = "<group>";

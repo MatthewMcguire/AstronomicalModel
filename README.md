@@ -6,7 +6,7 @@
 
 - Create several components that are as independent and reusable as possible.
 - Execute the project in C++ and OpenGL (v. 3.3 or so, possibly as low as 3.0)
-- Have as few library dependencies as possible. Ideally, just GLFW 3.0+ and GLM.
+- Have as few library dependencies as possible. Ideally, just GLFW 3.0+ and free header-only libraries such as GLM and STB image
 
 **Things I will do**
 
@@ -34,5 +34,7 @@
 
 
 *Notes*
-Shader buffers:
-1
+Need a constant panel to show:
+- current scale factor
+- current speed
+- 'hours' elasped

@@ -1,14 +1,15 @@
 #version 330
 in vec3 vPosition;
+in vec3 vNormal;
 uniform camera {
     mat4 modelvMatrix;
     mat4 projMatrix;
 };
-uniform mat4 objectTrans[9];
+uniform mat4 objectTransform[9];
 out vec4 colour;
 
 void main() {
-    gl_Position = projMatrix * modelvMatrix * objectTrans[gl_InstanceID] * vec4(vPosition,1.0);
+    gl_Position = projMatrix * modelvMatrix * objectTransform[gl_InstanceID] * vec4(vPosition,1.0);
     switch(gl_InstanceID)
     {
         case 0: // yellow

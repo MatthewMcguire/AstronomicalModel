@@ -16,7 +16,7 @@
 
 // Sphere and Solar system objects are initialized
 
-AstroGroup solarSystem;
+AstroGroup solarSystem(0.35);
 
 //**************************************************
 /*@@##====--- OpenGL parameters (BEGIN) ---====##@@*/
@@ -63,17 +63,17 @@ size_t uVarMemorySize[numCameraBlockVars];
 
 // the camera begins out on the positive z-axis, looking at the origin
 GLfloat camEyeθ = M_PI;         // θ is measured around the x-z plane, begins at pi
-GLfloat camEyeφ = (M_PI/2.0);   // φ is measured downward from the positive-y axis, begins at pi/2
-GLfloat camEyeR = 4.0f;         // R is the 'radius': the distance from the origin to the camera
-point3 camEye = euclidCamera(camEyeR,camEyeθ,camEyeφ);
+GLfloat camEyeφ = (0.0);   // φ is measured downward from the positive-y axis, begins at pi/2
+GLfloat camEyeR = 1200.0f;         // R is the 'radius': the distance from the origin to the camera
+point3 camEye = euclidSpherical(camEyeR,camEyeθ,camEyeφ);
 point3 camRight = {cos(camEyeθ),0,-sin(camEyeθ)};   // to orient the camera, the vector directly to right
 point3 camAt = point3(0.0f,0.0f,0.0f);
-point3 camUp = point3(0.0f,1.0f,0.0f);
+point3 camUp = glm::cross(camEye,camRight);
 
 GLfloat frFOV =20.0;                // field of view for perspective frustrum
 GLfloat frAspect = 1.0f;            // aspect ratio for perspective frustrum
 GLfloat frNear = 0.1f;              // near side of perspective frustrum
-GLfloat frFar = 6000.0f;            // far side of perspective frustrum
+GLfloat frFar = 10020.0f;            // far side of perspective frustrum
 
 GLfloat accelFactor = 0.2f;
 GLfloat zoomFactor = 0.15f;
@@ -90,11 +90,21 @@ matr4 objTransforms[20];        // array of model transforms for each object
 
 //*********************************************************
 /*@@##====--- General helper functions (BEGIN) ---====##@@*/
-void reportSpeed(void)
+enum {simspeed,simscale};
+void reportParam(int report)
 {
-    float hoursPerSecond = simulationSpeed/pauseLength;         // number of simulation 'hours' per sec.
-    hoursPerSecond = float(int(hoursPerSecond*100.0))/100.0;    // round to hundredths
-    std::cout << "Simulation speed: " << hoursPerSecond << " hours per second" << std::endl;
+    float hoursPerSecond;
+    switch(report)
+    {
+        case simspeed:
+            hoursPerSecond = simulationSpeed/pauseLength;         // number of simulation 'hours' per sec.
+            hoursPerSecond = float(int(hoursPerSecond*100.0))/100.0;    // round to hundredths
+            std::cout << "Simulation speed: " << hoursPerSecond << " hours per second" << std::endl;
+            break;
+        case simscale:
+            std::cout << "Simulation Scale: " << solarSystem.currentScaleFactor() << std::endl;
+            break;
+    }
 }
 void togglePolyMode(void)
 {
@@ -189,17 +199,19 @@ void specialKeyTyping(GLFWwindow* mainWin, int key, int scancode, int action, in
         break;
         case GLFW_KEY_UP:
             solarSystem.adjustScale(+0.01);
+            reportParam(simscale);
         break;
         case GLFW_KEY_DOWN:
             solarSystem.adjustScale(-0.01);
+            reportParam(simscale);
         break;
         case GLFW_KEY_LEFT:
-            simulationSpeed -= 0.25;
-            reportSpeed();
+            simulationSpeed -= 0.05;
+            reportParam(simspeed);
         break;
         case GLFW_KEY_RIGHT:
-            simulationSpeed += 0.25;
-            reportSpeed();
+            simulationSpeed += 0.05;
+            reportParam(simspeed);
         break;
         case GLFW_KEY_SPACE:
         default:
@@ -232,7 +244,6 @@ void scrollFunc(GLFWwindow* mainWin, double xOffset, double yOffset)
     camEyeR *= (1.0+rShift);
 }
 /*@@##====--- GLFW Callback functions (END) ---====##@@*/
-
 
 
 void initGLFW()
@@ -285,7 +296,6 @@ void initOpenGL()
     /*--- Create VAO and buffer stuff  ---*/
     glGenBuffers(numBuffers,shaderBuffer);
     glGenVertexArrays(numVAO,VertexArrayID);
-    
 
     /*--- (BEGIN) Sphere Preparation  ---*/
     // program 0 draws the astronomical objects as instances of a single sphere
@@ -314,17 +324,13 @@ void initOpenGL()
     attribLocation[0] = glGetAttribLocation(program[0], "vPosition");
     glVertexAttribPointer(attribLocation[0],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
 
-
     // connect sphere specification matrices
-    uniformLocation[0] = glGetUniformLocation(program[0], "objectTrans");
+    uniformLocation[0] = glGetUniformLocation(program[0], "objectTransform");
     // scale each sphere to proper size
-    for (int i=0; i < solarSystem.numObjects; i++) {
-//        float sizeF = properScale(solarModel[i].size);
-//        matr4 initScale = glm::scale(matr4(1.0f), vec3(sizeF,sizeF,sizeF));
-//        float orbitRad = properScale(solarModel[i].distFromCenterOfRot);
-//        matr4 initLoc = glm::translate(matr4(1.0f),vec3(orbitRad,0.0,0.0));
-        objTransforms[i] = solarSystem.montum[i].absLocation * solarSystem.montum[i].relOrientScale;
-    }
+    for (int i=0; i < solarSystem.numObjects; i++)
+        objTransforms[i] = solarSystem.montum[i].modelOrientation *
+        solarSystem.montum[i].absLocationMatrix *
+        solarSystem.montum[i].modelScale;
     glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects,
                        GL_FALSE, glm::value_ptr(objTransforms[0]));
 
@@ -369,7 +375,7 @@ void initOpenGL()
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
     
-    reportSpeed();
+    reportParam(simspeed);
 }
 void initTextures()
 {
@@ -416,7 +422,7 @@ void initTextures()
 
 void updateCamera(void)
 {
-    camEye = euclidCamera(camEyeR,camEyeθ,camEyeφ);
+    camEye = euclidSpherical(camEyeR,camEyeθ,camEyeφ);
     modelvMatrix = glm::lookAt(camEye,camAt,camUp);
     projMatrix = glm::perspective(frFOV,frAspect,frNear,frFar);
 
@@ -429,7 +435,9 @@ void modelAnimate(void)
 {
     solarSystem.updateMontum(60.0 * simulationSpeed);
     for (int i=0; i < solarSystem.numObjects; i++) {
-        objTransforms[i] = solarSystem.montum[i].absLocation * solarSystem.montum[i].relOrientScale;
+        objTransforms[i] = solarSystem.montum[i].modelOrientation *
+        solarSystem.montum[i].absLocationMatrix *
+        solarSystem.montum[i].modelScale;
     }
     glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects, GL_FALSE, glm::value_ptr(objTransforms[0]));
 }

@@ -57,7 +57,7 @@ void BetterSphere::generateVertices(void)
     stIter++;
     for (int j = 1; j<bands; j++) {  // sequence of middle bands
         for (int i = 0; i<fans; i++) {
-            theSphere.vertices.insert(vertIter,euclidCamera(radius, float(i)*thetaIncrem, float(j)*phiIncrem));
+            theSphere.vertices.insert(vertIter,euclidSpherical(radius, float(i)*thetaIncrem, float(j)*phiIncrem));
             theSphere.stMap.insert(stIter,vec2((float(i)*thetaIncrem)/(2*M_PI),0.75-(float(j)*phiIncrem/(2*M_PI))));
             vertIter++;
             stIter++;

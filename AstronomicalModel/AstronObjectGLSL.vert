@@ -1,5 +1,7 @@
 #version 330
 in vec3 vPosition;
+in vec2 textureSTMap;
+out vec2 textureSTMapFrag;
 in vec3 vNormal;
 uniform camera {
     mat4 modelvMatrix;
@@ -10,6 +12,7 @@ out vec4 colour;
 
 void main() {
     gl_Position = projMatrix * modelvMatrix * objectTransform[gl_InstanceID] * vec4(vPosition,1.0);
+    textureSTMapFrag = textureSTMap;
     switch(gl_InstanceID)
     {
         case 0: // yellow

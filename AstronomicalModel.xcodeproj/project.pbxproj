@@ -32,6 +32,7 @@
 
 /* Begin PBXFileReference section */
 		348C265D1B17A3E0008F9AAC /* screenCap1.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = screenCap1.mp4; sourceTree = "<group>"; };
+		34A42DBE1B1814330003CBF3 /* LunaVenus.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = LunaVenus.gif; sourceTree = "<group>"; };
 		34C3B1661B124D9B00245D52 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		34C3B1681B13685700245D52 /* BetterSphere.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BetterSphere.h; sourceTree = "<group>"; };
 		34FC1F321B0FAF2B00AD6E0E /* AstronomicalModel */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = AstronomicalModel; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -92,9 +93,9 @@
 		34FC1F341B0FAF2B00AD6E0E /* AstronomicalModel */ = {
 			isa = PBXGroup;
 			children = (
+				34FC1F4A1B0FB96900AD6E0E /* textures */,
 				34FE9D7F1B14C16D00114348 /* shaders */,
 				34FC1F4B1B0FBA5100AD6E0E /* myLibs */,
-				34FC1F4A1B0FB96900AD6E0E /* textures */,
 				34FC1F491B0FB95B00AD6E0E /* screenshots */,
 				34FC1F351B0FAF2B00AD6E0E /* main.cpp */,
 				34FC1F481B0FB93200AD6E0E /* main.h */,
@@ -114,6 +115,7 @@
 		34FC1F4A1B0FB96900AD6E0E /* textures */ = {
 			isa = PBXGroup;
 			children = (
+				34A42DBE1B1814330003CBF3 /* LunaVenus.gif */,
 			);
 			name = textures;
 			sourceTree = "<group>";

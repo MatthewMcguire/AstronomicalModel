@@ -90,7 +90,6 @@ AstroObject::AstroObject(std::string initName, float initRadius, float initTiltA
     leftmostChild = NULL;
     rightSibling = NULL;
     absLocationMatrix = glm::mat4(1.0);
-
 }
 
 /*---  This function increments the object in its orbit and rotation    ---*/
@@ -156,7 +155,7 @@ public:
     void updateMontum(float);               // traverse the objects and increment them all
     void drawMontum(void);                  // draw the objects as instances of a sphere
     void traverseM(AstroObject& ,glm::mat4);    // traverse the tree of montum and assign absLocationMatrix
-    BetterSphere s = BetterSphere(10,15,1.0);
+    BetterSphere s = BetterSphere(20,20,1.0);
     GLsizei numObjects;
     std::vector<AstroObject> montum;        // a collection of astronomical objects
     void adjustScale(float);                // change the scale factor during run-time

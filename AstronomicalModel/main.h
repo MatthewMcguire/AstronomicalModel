@@ -319,13 +319,23 @@ void initOpenGL()
                     &solarSystem.s.theSphere.norms.front());
 
     glBindVertexArray(VertexArrayID[0]);
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
     glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
     attribLocation[0] = glGetAttribLocation(program[0], "vPosition");
     glVertexAttribPointer(attribLocation[0],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
 
+    attribLocation[1] = glGetAttribLocation(program[0], "vNormal");
+    glVertexAttribPointer(attribLocation[1],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
+
+    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[2]);
+    attribLocation[2] = glGetAttribLocation(program[0], "textureSTMap");
+    glVertexAttribPointer(attribLocation[2],2,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
+
     // connect sphere specification matrices
     uniformLocation[0] = glGetUniformLocation(program[0], "objectTransform");
+
+
     // scale each sphere to proper size
     for (int i=0; i < solarSystem.numObjects; i++)
         objTransforms[i] = solarSystem.montum[i].modelOrientation *
@@ -370,31 +380,27 @@ void initOpenGL()
     glBufferData(GL_UNIFORM_BUFFER, uBlockSize[0], uBufferCamera, GL_STATIC_DRAW);
     //    --- (END) Uniform block: Camera  ---
 
-    //    attribLocation[1] = glGetAttribLocation(program[0], "vNormal");
-    //    glVertexAttribPointer(attribLocation[1],3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
-
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
-    
     reportParam(simspeed);
 }
 void initTextures()
 {
-//    /*--- (BEGIN) Texture preparation: Earth map  ---*/
-//    glGenTextures(2, textureName);
-//
-//    glUseProgram(program[0]);
-//    glBindVertexArray(VertexArrayID[0]);
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, textureName[0]);
-//    loadTextureImg("equEarth-2048.gif");
-//
-//    glGenerateMipmap(GL_TEXTURE_2D);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-//    uniformLocation[1] = glGetUniformLocation(program[0], "samplePanel");
-//    glUniform1i(uniformLocation[1], 0);
+    /*--- (BEGIN) Texture preparation: Map of Luna and Venus ---*/
+    glGenTextures(1, textureName);
+
+    glUseProgram(program[0]);
+    glBindVertexArray(VertexArrayID[0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureName[0]);
+    loadTextureImg("LunaVenus.gif");
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    uniformLocation[1] = glGetUniformLocation(program[0], "sample01");
+    glUniform1i(uniformLocation[1], 0);
 //    /*--- (END) Texture preparation: Earth map  ---*/
 //
 //    /*--- (BEGIN) Texture preparation: Panel and sliders  ---*/
@@ -445,9 +451,8 @@ void modelAnimate(void)
 void drawObjects(void)
 {
     glBindVertexArray(VertexArrayID[0]);
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, textureName[0]);
-    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureName[0]);
     glEnableVertexAttribArray(attribLocation[0]);
     glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);

@@ -9,10 +9,15 @@ uniform camera {
 };
 uniform mat4 objectTransform[9];
 out vec4 colour;
+varying int instanceID;
 
 void main() {
     gl_Position = projMatrix * modelvMatrix * objectTransform[gl_InstanceID] * vec4(vPosition,1.0);
-    textureSTMapFrag = textureSTMap;
+    instanceID =gl_InstanceID;
+    if(gl_InstanceID == 0)
+       textureSTMapFrag = vec2(textureSTMap.x, 0.5*textureSTMap.y);
+    else
+       textureSTMapFrag = vec2(textureSTMap.x, 0.5*textureSTMap.y+0.5);
     switch(gl_InstanceID)
     {
         case 0: // yellow

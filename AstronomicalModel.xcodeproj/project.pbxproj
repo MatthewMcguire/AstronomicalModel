@@ -32,6 +32,7 @@
 
 /* Begin PBXFileReference section */
 		348C265D1B17A3E0008F9AAC /* screenCap1.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = screenCap1.mp4; sourceTree = "<group>"; };
+		348C265F1B18FAB4008F9AAC /* MarsVenus.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MarsVenus.png; sourceTree = "<group>"; };
 		34A42DBE1B1814330003CBF3 /* LunaVenus.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = LunaVenus.gif; sourceTree = "<group>"; };
 		34C3B1661B124D9B00245D52 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		34C3B1681B13685700245D52 /* BetterSphere.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BetterSphere.h; sourceTree = "<group>"; };
@@ -115,6 +116,7 @@
 		34FC1F4A1B0FB96900AD6E0E /* textures */ = {
 			isa = PBXGroup;
 			children = (
+				348C265F1B18FAB4008F9AAC /* MarsVenus.png */,
 				34A42DBE1B1814330003CBF3 /* LunaVenus.gif */,
 			);
 			name = textures;

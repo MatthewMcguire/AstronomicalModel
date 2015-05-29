@@ -29,9 +29,11 @@ class BetterSphere
 private:
     int fans, bands;
     float radius;
-    float thetaIncrem, phiIncrem;
+    float thetaIncrem;
+    float phiIncrem;
     void generateVertices(void);
     void generateIndices(void);
+    void generateTextureMapsCoords(void);
     void generateNorms(void);
     void addNorm(vec3, int);
     void checkParams(int, int);
@@ -44,28 +46,32 @@ public:
 };
 void BetterSphere::generateVertices(void)
 {
-    thetaIncrem = 2.0*M_PI/fans;     // how much to increment theta
-    phiIncrem = M_PI/bands;          // how much to increment Phi
     std::vector<point3>::iterator vertIter;
-    std::vector<point2>::iterator stIter;
     vertIter = theSphere.vertices.begin();
-    stIter = theSphere.stMap.begin();
-    
     theSphere.vertices.insert(vertIter,point3(0.0f,radius,0.0f)); // top-of-sphere vertex
-    theSphere.stMap.insert(stIter,vec2(0.5,0.75));
     vertIter++;
-    stIter++;
     for (int j = 1; j<bands; j++) {  // sequence of middle bands
         for (int i = 0; i<fans; i++) {
             theSphere.vertices.insert(vertIter,euclidSpherical(radius, float(i)*thetaIncrem, float(j)*phiIncrem));
-            theSphere.stMap.insert(stIter,vec2((float(i)*thetaIncrem)/(2*M_PI),0.75-(float(j)*phiIncrem/(2*M_PI))));
             vertIter++;
-            stIter++;
         }
     }
     theSphere.vertices.insert(vertIter,point3(0.0f,-radius,0.0f));// bottom-of-sphere vertex
-    theSphere.stMap.insert(stIter,vec2(0.5,0.25));
     // finished generating vertices for the sphere surface primitives
+}
+void BetterSphere::generateTextureMapsCoords(void)
+{
+    std::vector<point2>::iterator stIter;
+    stIter = theSphere.stMap.begin();
+    theSphere.stMap.insert(stIter,vec2(0.5,1.0));   // the equirectangular projection begins here
+    stIter++;
+    for (int j = 1; j<bands; j++) {  // sequence of middle bands
+        for (int i = 0; i<fans; i++) {
+            theSphere.stMap.insert(stIter,vec2((float(i)*thetaIncrem)/(2*M_PI),1.0-(float(j)*phiIncrem/M_PI)));
+            stIter++;
+        }
+    }
+    theSphere.stMap.insert(stIter,vec2(0.5,0.0));  // the equirectangular projection ends here
 }
 BetterSphere::BetterSphere(int inputFans, int inputBands, float inputRadius)
 {
@@ -82,12 +88,14 @@ BetterSphere::BetterSphere(int inputFans, int inputBands, float inputRadius)
     theSphere.norms.reserve(theSphere.numVertices);
     theSphere.verticesCombinedForNorms.reserve(theSphere.numVertices);
     theSphere.stMap.reserve(theSphere.numVertices);
+    thetaIncrem = 2.0*M_PI/fans;     // how much to increment Theta when traversing
+    phiIncrem = M_PI/bands;          // how much to increment Phi when traversing
     
     checkParams(fans, bands);
     generateVertices();
+    generateTextureMapsCoords();
     generateIndices();
     generateNorms();
-    
 };
 void BetterSphere::checkParams(int fans, int bands)
 {

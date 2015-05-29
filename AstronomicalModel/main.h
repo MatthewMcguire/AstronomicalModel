@@ -13,28 +13,26 @@
 #include "BetterSphere.h"
 #include "AstronObject.h"
 
-
 // Sphere and Solar system objects are initialized
-
-AstroGroup solarSystem(0.35);
+AstroGroup solarSystem(0.35);       // create a solar system object, passing a spatial scaling value
 
 //**************************************************
 /*@@##====--- OpenGL parameters (BEGIN) ---====##@@*/
 const int numVAO = 3;
-const int numBuffers = 3;
+const int numBuffers = 6;
 const int numUBuffs = 3;
 GLuint VertexArrayID[numVAO];       //  Array of Vertex Array Objects
 GLuint program[1];                  //  max. number of shader programs
 GLuint shaderBuffer[numBuffers];    //  Array of ordinary shader buffers
-GLuint attribLocation[3];           //  Array of shader attribute locations
+GLuint attribLocation[6];           //  Array of shader attribute locations
 GLint uniformLocation[3];           //  Array of uniform variable locations
-GLuint textureName[3];
+GLuint textureName[6];              //  Array of texture names
 GLuint uBlockIndex[numUBuffs];      //  Array of Uniform buffer block names
 GLint uBlockSize[numUBuffs];        //  Sizes of Uniform buffer blocks
-GLuint uBlockBinding​[numUBuffs];
+GLuint uBlockBinding​[numUBuffs];    //  Names of Uniform block binding, should we use multiple shaders
 GLubyte * uBufferCamera;
 enum PolygonModes {LINE, SURFACE, POINT};
-PolygonModes polygonModeToggle = LINE;
+PolygonModes polygonModeToggle = SURFACE;
 /*@@##====--- OpenGL parameters (END) ---====##@@*/
 
 //************************************************
@@ -64,7 +62,7 @@ size_t uVarMemorySize[numCameraBlockVars];
 // the camera begins out on the positive z-axis, looking at the origin
 GLfloat camEyeθ = M_PI;         // θ is measured around the x-z plane, begins at pi
 GLfloat camEyeφ = (0.0);   // φ is measured downward from the positive-y axis, begins at pi/2
-GLfloat camEyeR = 1200.0f;         // R is the 'radius': the distance from the origin to the camera
+GLfloat camEyeR = 1800.0f;         // R is the 'radius': the distance from the origin to the camera
 point3 camEye = euclidSpherical(camEyeR,camEyeθ,camEyeφ);
 point3 camRight = {cos(camEyeθ),0,-sin(camEyeθ)};   // to orient the camera, the vector directly to right
 point3 camAt = point3(0.0f,0.0f,0.0f);
@@ -90,6 +88,7 @@ matr4 objTransforms[20];        // array of model transforms for each object
 
 //*********************************************************
 /*@@##====--- General helper functions (BEGIN) ---====##@@*/
+// This reportParam function sends various parameters to stdout for problem-solving
 enum {simspeed,simscale};
 void reportParam(int report)
 {
@@ -108,31 +107,32 @@ void reportParam(int report)
 }
 void togglePolyMode(void)
 {
+    // Toggle between three modes of polygon representation: Vertex points, Lines, and Filled triangles
     switch(polygonModeToggle) {
         case LINE:
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         polygonModeToggle = SURFACE;
         break;
         case SURFACE:
-        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         polygonModeToggle = POINT;
         break;
         case POINT:
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
         polygonModeToggle = LINE;
         break;
     }
 }
 void moveCamera(void)
 {
-    // get current mouse cursor
-    // normalize to [-1,1]
+    // Obtain current mouse location from GLFW
+    // Then normalize the x and y positions to [-1,1]
     glfwGetCursorPos(mainWin, &xCursorPos, &yCursorPos);
     GLdouble displacedHorizontal = (xCursorPos-halfWinWidth)/halfWinWidth;
     GLdouble displacedVertical = (yCursorPos-halfWinHeight)/halfWinHeight;
     
-    // compute acceleration
-    // modify polar angles
+    // Compute the acceleration (exponentially) based on distance from window midpoint.
+    // Modify the camera spherical coordinates to change the viewing location accordingly
     camEyeθ += fabs(accelFactor*pow(displacedHorizontal,2.0))* sgn(displacedHorizontal);
     camEyeφ += fabs(accelFactor*pow(displacedVertical,2.0))* sgn(displacedVertical);
     camEyeθ = smallPiBound(camEyeθ);
@@ -140,7 +140,6 @@ void moveCamera(void)
     camRight = {cos(camEyeθ),0,-sin(camEyeθ)};
     camUp = glm::cross(camEye,camRight);
 }
-
 /*@@##====--- General helper functions (END) ---====##@@*/
 
 //********************************************************
@@ -301,11 +300,14 @@ void initOpenGL()
     // program 0 draws the astronomical objects as instances of a single sphere
     // program 0 will use VAO 0
     glUseProgram(program[0]);
-    // Sphere Indices and Vertices
+    
+    // Sphere model Indices are placed into shader buffer 0
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                  (sizeof(solarSystem.s.theSphere.indices[0]) * solarSystem.s.theSphere.numIndices),
                  &solarSystem.s.theSphere.indices.front(),GL_STATIC_DRAW);
+    
+    // Sphere model Vertices and Norms are placed into shader buffer 1
     glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
     glBufferData(GL_ARRAY_BUFFER,
                  ((sizeof(solarSystem.s.theSphere.vertices[0])+sizeof(solarSystem.s.theSphere.norms[0]))
@@ -317,9 +319,16 @@ void initOpenGL()
                     (sizeof(solarSystem.s.theSphere.vertices[0]) * solarSystem.s.theSphere.numVertices),
                     (sizeof(solarSystem.s.theSphere.norms[0]) * solarSystem.s.theSphere.numVertices),
                     &solarSystem.s.theSphere.norms.front());
-
+    
+    // Sphere model texture map coords (stMap) are placed into shader buffer 2
+    glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[2]);
+    glBufferData(GL_ARRAY_BUFFER,
+                 ((sizeof(solarSystem.s.theSphere.stMap[0]))
+                  * solarSystem.s.theSphere.numVertices),
+                 &solarSystem.s.theSphere.stMap.front(),GL_STATIC_DRAW);
+    
+    // the shader variables 'vPosition', 'vNormal', and 'textureSTMap' are connected as vertex attribs
     glBindVertexArray(VertexArrayID[0]);
-
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
     glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
     attribLocation[0] = glGetAttribLocation(program[0], "vPosition");
@@ -332,28 +341,30 @@ void initOpenGL()
     attribLocation[2] = glGetAttribLocation(program[0], "textureSTMap");
     glVertexAttribPointer(attribLocation[2],2,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(0));
 
-    // connect sphere specification matrices
+    // The shader uniform variable 'objectTransform' is connected
+    // It contains sphere specification matrices (i.e. transformations to scale, rotation, and translation)
     uniformLocation[0] = glGetUniformLocation(program[0], "objectTransform");
-
-
-    // scale each sphere to proper size
+    // combine the orientation, translation, and scale transforms into a single matrix for each object
     for (int i=0; i < solarSystem.numObjects; i++)
         objTransforms[i] = solarSystem.montum[i].modelOrientation *
         solarSystem.montum[i].absLocationMatrix *
         solarSystem.montum[i].modelScale;
-    glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects,
-                       GL_FALSE, glm::value_ptr(objTransforms[0]));
+    glUniformMatrix4fv(uniformLocation[0], solarSystem.numObjects, GL_FALSE, glm::value_ptr(objTransforms[0]));
 
-    /*--- (BEGIN) Uniform block: Camera  ---*/
+    /*-- The shader Uniform block 'Camera' containing all View and Perspective transforms is connected
+         It contains matrices 'modelvMatrix' (for camera placement) and 'projMatrix' (viewing frustrum)
+         that are common to all model objects */
     glUseProgram(program[0]);
     uBlockIndex[0] = glGetUniformBlockIndex(program[0], "camera");
-    if (uBlockIndex[0] == GL_INVALID_INDEX) {
+    if (uBlockIndex[0] == GL_INVALID_INDEX)
+    {
         std::cout << "Unable to find 'camera' uniform block in the program." << std::endl;
         exit(EXIT_FAILURE);
     } ;
     glGetActiveUniformBlockiv(program[0], uBlockIndex[0], GL_UNIFORM_BLOCK_DATA_SIZE, &uBlockSize[0]);
     uBufferCamera = (GLubyte *) malloc(uBlockSize[0]);
-    if (uBufferCamera==NULL) {
+    if (uBufferCamera==NULL)
+    {
         std::cout << "Failed while allocating uniform block buffer.\n\n"; exit(EXIT_FAILURE);
     }
     const char* uVarNames[numCameraBlockVars] = {"modelvMatrix","projMatrix"};
@@ -373,34 +384,35 @@ void initOpenGL()
 
     memcpy(modelMatrixAddr,&modelvMatrix, uVarMemorySize[0]);
     memcpy(projMatrixAddr,&projMatrix, uVarMemorySize[1]);
+    
     uBlockBinding​[0]= 1;
     glUniformBlockBinding(program[0], uBlockIndex[0],uBlockBinding​[0]);
-    glBindBufferBase(GL_UNIFORM_BUFFER, uBlockBinding​[0], shaderBuffer[2]);
-    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer[2]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, uBlockBinding​[0], shaderBuffer[3]);
+    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer[3]);
     glBufferData(GL_UNIFORM_BUFFER, uBlockSize[0], uBufferCamera, GL_STATIC_DRAW);
-    //    --- (END) Uniform block: Camera  ---
+    //-------- (END) Uniform block: Camera  --------//
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
     reportParam(simspeed);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 void initTextures()
 {
     /*--- (BEGIN) Texture preparation: Map of Luna and Venus ---*/
     glGenTextures(1, textureName);
-
+    glEnableVertexAttribArray(attribLocation[2]);
     glUseProgram(program[0]);
     glBindVertexArray(VertexArrayID[0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureName[0]);
-    loadTextureImg("LunaVenus.gif");
+    loadTextureImg("MarsVenus.png");
 
     glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     uniformLocation[1] = glGetUniformLocation(program[0], "sample01");
-    glUniform1i(uniformLocation[1], 0);
+    glUniform1i(uniformLocation[1], 0); 
 //    /*--- (END) Texture preparation: Earth map  ---*/
 //
 //    /*--- (BEGIN) Texture preparation: Panel and sliders  ---*/
@@ -434,13 +446,14 @@ void updateCamera(void)
 
     memcpy(modelMatrixAddr,&modelvMatrix, uVarMemorySize[0]);
     memcpy(projMatrixAddr,&projMatrix, uVarMemorySize[1]);
-    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer[2]);
+    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer[3]);
     glBufferData(GL_UNIFORM_BUFFER, uBlockSize[0], uBufferCamera, GL_STATIC_DRAW);
 }
 void modelAnimate(void)
 {
     solarSystem.updateMontum(60.0 * simulationSpeed);
-    for (int i=0; i < solarSystem.numObjects; i++) {
+    for (int i=0; i < solarSystem.numObjects; i++)
+    {
         objTransforms[i] = solarSystem.montum[i].modelOrientation *
         solarSystem.montum[i].absLocationMatrix *
         solarSystem.montum[i].modelScale;
@@ -454,10 +467,12 @@ void drawObjects(void)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureName[0]);
     glEnableVertexAttribArray(attribLocation[0]);
+    glEnableVertexAttribArray(attribLocation[2]);
     glBindBuffer(GL_ARRAY_BUFFER, shaderBuffer[1]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shaderBuffer[0]);
     solarSystem.drawMontum();
     glDisableVertexAttribArray(attribLocation[0]);
+    glDisableVertexAttribArray(attribLocation[2]);
 }
 
 

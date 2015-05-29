@@ -55,6 +55,7 @@ Need a constant panel to show:
 - shaderBuffer[0]    : [sphere]    GL_ELEMENT_ARRAY_BUFFER (vertex indices)
 - shaderBuffer[1]    : [sphere]    GL_ARRAY_BUFFER  (vertices)
 - shaderBuffer[2]    : [sphere]    GL_ARRAY_BUFFER  (st texture map)
+- shaderBuffer[3]    : [camera]    GL_ARRAY_BUFFER  (camera uniform block)
 
 - textureName[0]     : GL_TEXTURE0 LunaVenus.gif
 
